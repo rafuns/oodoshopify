@@ -68,7 +68,7 @@ class ShopifyInstance(models.Model):
     company_id = fields.Many2one('res.company', string='Company', default=lambda self: self.env.company)
 
     # ── AI content generation (OpenAI-compatible) ────────────────────────────
-    ai_api_key = fields.Char(string='AI API Key', password=True,
+    ai_api_key = fields.Char(string='AI API Key',
                              help='OpenAI-compatible API key for AI content generation.')
     ai_base_url = fields.Char(string='AI Base URL', default='https://api.openai.com/v1',
                               help='OpenAI-compatible API base (change for Azure/OpenRouter/local).')

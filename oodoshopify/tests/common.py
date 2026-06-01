@@ -101,7 +101,7 @@ SAMPLE_PAYOUT_NODE = {
     'summary': {
         'chargesGross':     {'amount': '179.97', 'currencyCode': 'USD'},
         'chargesFee':       {'amount': '-5.40',  'currencyCode': 'USD'},
-        'refundsGross':     {'amount': '-29.99', 'currencyCode': 'USD'},
+        'refundsFeeGross':  {'amount': '-29.99', 'currencyCode': 'USD'},
         'refundsFee':       {'amount': '0.90',   'currencyCode': 'USD'},
         'adjustmentsGross': {'amount': '0.00',   'currencyCode': 'USD'},
         'adjustmentsFee':   {'amount': '0.00',   'currencyCode': 'USD'},

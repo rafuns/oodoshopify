@@ -13,8 +13,7 @@ class ShopifyNLConsoleWizard(models.TransientModel):
     instance_id = fields.Many2one('shopify.instance', string='Store', required=True)
     request = fields.Text(
         string='What do you want to sync?', required=True,
-        placeholder='e.g. "import paid orders from the last 30 days" '
-                    'or "pull all products"')
+        help='e.g. "import paid orders from the last 30 days" or "pull all products"')
     parsed = fields.Text(string='Interpreted As', readonly=True)
 
     _SCHEMA_HINT = (

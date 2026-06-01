@@ -24,7 +24,7 @@ QUERY_PAYOUTS = '''
                             adjustmentsFee    { amount currencyCode }
                             chargesGross      { amount currencyCode }
                             chargesFee        { amount currencyCode }
-                            refundsGross      { amount currencyCode }
+                            refundsFeeGross   { amount currencyCode }
                             refundsFee        { amount currencyCode }
                         }
                     }
@@ -214,7 +214,7 @@ class ShopifyPayout(models.Model):
             'net_amount':        _amt(net),
             'charges_gross':     _amt(smry.get('chargesGross')),
             'charges_fee':       _amt(smry.get('chargesFee')),
-            'refunds_gross':     _amt(smry.get('refundsGross')),
+            'refunds_gross':     _amt(smry.get('refundsFeeGross')),
             'refunds_fee':       _amt(smry.get('refundsFee')),
             'adjustments_gross': _amt(smry.get('adjustmentsGross')),
             'adjustments_fee':   _amt(smry.get('adjustmentsFee')),

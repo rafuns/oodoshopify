@@ -15,8 +15,6 @@ QUERY_ABANDONED_CHECKOUTS = '''
             edges {
                 node {
                     id
-                    email
-                    phone
                     createdAt
                     updatedAt
                     completedAt
