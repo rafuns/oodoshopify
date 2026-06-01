@@ -1,6 +1,6 @@
 {
     'name': 'Shopify Odoo Connector',
-    'version': '19.0.1.0.2',
+    'version': '19.0.1.0.3',
     'category': 'eCommerce',
     'summary': 'Real-time Shopify sync: orders, products, inventory, customers, '
                'payouts, themes + AI content, profit margins & drift detection',
@@ -26,7 +26,7 @@ Beyond a connector — features no other Shopify connector offers:
 
 Connects to the Shopify Admin API using your own store credentials.
 """,
-    'author': 'Ennovation Brands',
+    'author': 'Nepsol Web',
     'website': 'https://nepsolweb.com',
     'license': 'OPL-1',
     'price': 99.00,
