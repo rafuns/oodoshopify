@@ -26,6 +26,7 @@ class ShopifyImportJob(models.Model):
         ('collections', 'Collections'),
         ('payouts', 'Payouts'),
         ('abandoned', 'Abandoned Checkouts'),
+        ('discounts', 'Discounts'),
     ], string='Type', required=True)
 
     state = fields.Selection([

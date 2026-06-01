@@ -126,3 +126,21 @@ class TestHistoricalImportQueue(ShopifyTestBase):
         })
         with self.assertRaises(ValueError):
             job._run_historical_import()
+
+
+class TestImportJobKindsComplete(ShopifyTestBase):
+    """Every kind the queue can enqueue must be a valid import.job kind."""
+
+    def test_all_kinds_valid(self):
+        job_kinds = dict(self.env['shopify.import.job']._fields['kind'].selection)
+        for kind in ('orders', 'products', 'customers', 'collections',
+                     'payouts', 'abandoned', 'discounts'):
+            self.assertIn(kind, job_kinds, "import.job.kind missing '%s'" % kind)
+
+    def test_enqueue_discounts_creates_job(self):
+        job = self.env['shopify.queue'].enqueue_historical_import(
+            self.instance, 'discounts', {'chunked': True})
+        self.assertEqual(job.operation, 'historical_import')
+        import_job = self.env['shopify.import.job'].search(
+            [('kind', '=', 'discounts')], limit=1)
+        self.assertTrue(import_job)
