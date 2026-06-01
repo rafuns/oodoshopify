@@ -16,3 +16,6 @@ __pycache__/
 # Local seeding helpers (not part of the module)
 seed_demo.py
 purge_demo.py
+
+# Build artifact
+oodoshopify.zip
