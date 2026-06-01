@@ -13,12 +13,8 @@ QUERY_MARKETS = '''
                     id
                     name
                     handle
-                    enabled
-                    primary
+                    status
                     currencySettings { baseCurrency { currencyCode } }
-                    regions(first: 50) {
-                        edges { node { name ... on MarketRegionCountry { code } } }
-                    }
                 }
             }
         }
@@ -105,21 +101,16 @@ class ShopifyMarket(models.Model):
             ('instance_id', '=', instance.id),
             ('shopify_market_id', '=', numeric_id),
         ], limit=1)
-        regions = [
-            r['node'].get('code', '')
-            for r in node.get('regions', {}).get('edges', [])
-            if r['node'].get('code')
-        ]
+        currency_settings = node.get('currencySettings') or {}
+        base_ccy = (currency_settings.get('baseCurrency') or {}).get('currencyCode', '')
         vals = {
             'name': node.get('name', ''),
             'instance_id': instance.id,
             'shopify_market_id': numeric_id,
             'shopify_market_gid': gid,
             'handle': node.get('handle', ''),
-            'enabled': node.get('enabled', True),
-            'is_primary': node.get('primary', False),
-            'base_currency': (node.get('currencySettings') or {}).get('baseCurrency', {}).get('currencyCode', ''),
-            'region_codes': ', '.join(regions),
+            'enabled': node.get('status') == 'ACTIVE',
+            'base_currency': base_ccy,
         }
         if existing:
             existing.write(vals)

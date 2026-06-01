@@ -45,8 +45,7 @@ class TestMarket(ShopifyTestBase):
         rec = self.env['shopify.market'].search([('shopify_market_id', '=', '7001')])
         self.assertEqual(rec.name, 'Europe')
         self.assertEqual(rec.base_currency, 'EUR')
-        self.assertIn('FR', rec.region_codes)
-        self.assertIn('DE', rec.region_codes)
+        self.assertTrue(rec.enabled)  # status ACTIVE → enabled
 
     def test_unique_constraint(self):
         self.env['shopify.market'].create({

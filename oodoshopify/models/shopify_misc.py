@@ -264,7 +264,7 @@ QUERY_COMPANIES = '''
                     id name externalId createdAt
                     totalSpent { amount currencyCode }
                     locationsCount { count }
-                    contactCount
+                    contactsCount { count }
                 }
             }
         }
@@ -344,7 +344,7 @@ class ShopifyCompany(models.Model):
                     'total_spent': float(spent.get('amount', 0)),
                     'currency': spent.get('currencyCode', ''),
                     'locations_count': (node.get('locationsCount') or {}).get('count', 0),
-                    'contact_count': node.get('contactCount', 0),
+                    'contact_count': (node.get('contactsCount') or {}).get('count', 0),
                 }
                 company = existing or self.create(vals)
                 if existing:

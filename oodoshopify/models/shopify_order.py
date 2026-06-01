@@ -47,7 +47,7 @@ QUERY_ORDERS = '''
                     createdAt
                     displayFinancialStatus
                     displayFulfillmentStatus
-                    riskLevel
+                    risk { recommendation }
                     tags
                     note
                     totalPriceSet             { shopMoney { amount currencyCode } }
@@ -459,8 +459,12 @@ class ShopifyOrder(models.Model):
         def _amt(key):
             return float((node.get(key) or {}).get('shopMoney', {}).get('amount', 0))
 
-        raw_risk = (node.get('riskLevel') or '').lower()
-        risk_level = raw_risk if raw_risk in ('low', 'medium', 'high') else False
+        # Order risk moved from the removed `riskLevel` enum to `risk.recommendation`
+        # (ACCEPT / INVESTIGATE / CANCEL) in recent API versions.
+        recommendation = (node.get('risk') or {}).get('recommendation', '')
+        risk_level = {
+            'ACCEPT': 'low', 'INVESTIGATE': 'medium', 'CANCEL': 'high',
+        }.get(recommendation, False)
 
         vals = {
             'name': node.get('name', numeric_id),

@@ -1,6 +1,6 @@
 {
     'name': 'Shopify Odoo Connector',
-    'version': '19.0.1.0.0',
+    'version': '19.0.1.0.1',
     'category': 'eCommerce',
     'summary': 'Real-time Shopify sync: orders, products, inventory, customers, '
                'payouts, themes + AI content, profit margins & drift detection',
@@ -8,7 +8,7 @@
 Shopify Odoo Connector
 ======================
 
-Two-way, GraphQL-first (API 2025-04) Shopify integration:
+Two-way, GraphQL-first (API 2025-10) Shopify integration:
 
 * Orders, products & variants, customers, collections, inventory, refunds,
   returns, draft orders, payouts, gift cards, discounts, metafields, themes.

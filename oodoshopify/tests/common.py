@@ -151,13 +151,8 @@ SAMPLE_MARKET_NODE = {
     'id': 'gid://shopify/Market/7001',
     'name': 'Europe',
     'handle': 'europe',
-    'enabled': True,
-    'primary': False,
+    'status': 'ACTIVE',
     'currencySettings': {'baseCurrency': {'currencyCode': 'EUR'}},
-    'regions': {'edges': [
-        {'node': {'name': 'France', 'code': 'FR'}},
-        {'node': {'name': 'Germany', 'code': 'DE'}},
-    ]},
 }
 
 SAMPLE_COMPANY_NODE = {
@@ -166,7 +161,7 @@ SAMPLE_COMPANY_NODE = {
     'externalId': 'EXT-001',
     'totalSpent': {'amount': '15000.00', 'currencyCode': 'USD'},
     'locationsCount': {'count': 3},
-    'contactCount': 5,
+    'contactsCount': {'count': 5},
 }
 
 SAMPLE_RETURNABLE_FULFILLMENTS = {

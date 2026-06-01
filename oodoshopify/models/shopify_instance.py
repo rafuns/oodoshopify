@@ -17,7 +17,7 @@ _SHOPIFY_DOMAIN_RE = re.compile(
 
 _logger = logging.getLogger(__name__)
 
-SHOPIFY_API_VERSION = '2025-04'
+SHOPIFY_API_VERSION = '2025-10'
 
 
 class ShopifyInstance(models.Model):
