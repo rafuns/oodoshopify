@@ -108,7 +108,7 @@ MUTATION_ORDER_CANCEL = '''
     mutation orderCancel(
         $orderId:         ID!
         $reason:          OrderCancelReason!
-        $refund:          Boolean!
+        $refundMethod:    OrderCancelRefundMethodInput
         $restock:         Boolean!
         $notifyCustomer:  Boolean!
         $staffNote:       String
@@ -116,7 +116,7 @@ MUTATION_ORDER_CANCEL = '''
         orderCancel(
             orderId:        $orderId
             reason:         $reason
-            refund:         $refund
+            refundMethod:   $refundMethod
             restock:        $restock
             notifyCustomer: $notifyCustomer
             staffNote:      $staffNote
@@ -165,8 +165,8 @@ MUTATION_ORDER_MARK_AS_PAID = '''
 '''
 
 MUTATION_FULFILLMENT_CREATE = '''
-    mutation fulfillmentCreateV2($fulfillment: FulfillmentV2Input!) {
-        fulfillmentCreateV2(fulfillment: $fulfillment) {
+    mutation fulfillmentCreate($fulfillment: FulfillmentInput!) {
+        fulfillmentCreate(fulfillment: $fulfillment) {
             fulfillment {
                 id
                 status
@@ -733,7 +733,7 @@ class ShopifyOrder(models.Model):
                 MUTATION_FULFILLMENT_CREATE,
                 variables={'fulfillment': fulfillment_input},
             )
-            result = data.get('fulfillmentCreateV2', {})
+            result = data.get('fulfillmentCreate', {})
             user_errors = result.get('userErrors', [])
             if user_errors:
                 raise UserError(_('Fulfillment error: %s') % user_errors[0]['message'])
@@ -949,7 +949,9 @@ class ShopifyOrder(models.Model):
         variables = {
             'orderId':        self.shopify_order_gid,
             'reason':         reason,
-            'refund':         refund,
+            # refund: Boolean was replaced by refundMethod. True → refund to the
+            # original payment method(s); None → cancel without refunding.
+            'refundMethod':   {'originalPaymentMethodsRefund': True} if refund else None,
             'restock':        restock,
             'notifyCustomer': notify_customer,
             'staffNote':      staff_note or '',
