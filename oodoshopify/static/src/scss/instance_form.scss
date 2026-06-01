@@ -13,3 +13,20 @@
         min-width: 180px;
     }
 }
+
+// Widen the Shopify dashboard cards so the KPI numbers don't wrap.
+.o_shopify_dashboard {
+    .o_kanban_record {
+        width: 460px;
+        max-width: 100%;
+    }
+    // Keep numbers (and their labels) on a single line.
+    .o_shopify_dash_card {
+        .fs-4, .fs-5, strong {
+            white-space: nowrap;
+        }
+        .text-muted.small {
+            white-space: nowrap;
+        }
+    }
+}

@@ -4,10 +4,10 @@
         <field name="name">shopify.dashboard.kanban</field>
         <field name="model">shopify.dashboard</field>
         <field name="arch" type="xml">
-            <kanban class="o_kanban_dashboard" create="false" edit="false" delete="false">
+            <kanban class="o_kanban_dashboard o_shopify_dashboard" create="false" edit="false" delete="false">
                 <templates>
                     <t t-name="card">
-                        <div class="oe_kanban_global_click p-3">
+                        <div class="oe_kanban_global_click p-3 o_shopify_dash_card">
                             <div class="d-flex justify-content-between align-items-center mb-1">
                                 <strong class="fs-5"><field name="instance_name"/></strong>
                                 <field name="state" widget="badge"
