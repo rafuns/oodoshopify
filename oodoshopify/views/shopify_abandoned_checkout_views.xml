@@ -1,0 +1,164 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_abandoned_checkout_form" model="ir.ui.view">
+        <field name="name">shopify.abandoned.checkout.form</field>
+        <field name="model">shopify.abandoned.checkout</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_lead_manual" string="Create Lead"
+                            type="object" class="btn-primary"
+                            invisible="odoo_lead_id"/>
+                    <button name="action_view_lead" string="View Lead"
+                            type="object"
+                            invisible="not odoo_lead_id"/>
+                    <button name="action_open_checkout_url" string="Open Recovery URL"
+                            type="object" icon="fa-external-link"
+                            invisible="not checkout_url"/>
+                    <button name="action_mark_lost" string="Mark Lost"
+                            type="object"
+                            invisible="state != 'open'"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="open,recovered"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_view_lead" type="object"
+                                class="oe_stat_button" icon="fa-phone"
+                                invisible="not odoo_lead_id">
+                            <div class="o_stat_info">
+                                <span class="o_stat_text">CRM Lead</span>
+                            </div>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Customer">
+                            <field name="customer_name"/>
+                            <field name="email"/>
+                            <field name="phone"/>
+                            <field name="odoo_partner_id"/>
+                        </group>
+                        <group string="Checkout">
+                            <field name="instance_id"/>
+                            <field name="total_price"/>
+                            <field name="currency"/>
+                            <field name="created_at"/>
+                            <field name="completed_at"/>
+                            <field name="checkout_url" widget="url"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Cart Items">
+                            <field name="line_ids">
+                                <list>
+                                    <field name="product_title"/>
+                                    <field name="sku"/>
+                                    <field name="quantity"/>
+                                    <field name="unit_price"/>
+                                    <field name="subtotal"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_abandoned_checkout_list" model="ir.ui.view">
+        <field name="name">shopify.abandoned.checkout.list</field>
+        <field name="model">shopify.abandoned.checkout</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'recovered'"
+                  decoration-muted="state == 'lost'"
+                  decoration-warning="state == 'open'">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="customer_name"/>
+                <field name="email"/>
+                <field name="total_price"/>
+                <field name="currency"/>
+                <field name="created_at"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'recovered'"
+                       decoration-warning="state == 'open'"
+                       decoration-danger="state == 'lost'"/>
+                <field name="odoo_lead_id"/>
+                <button name="action_view_lead" string="Lead" type="object"
+                        icon="fa-phone" invisible="not odoo_lead_id"/>
+                <button name="action_create_lead_manual" string="Create Lead"
+                        type="object" icon="fa-plus"
+                        invisible="odoo_lead_id"/>
+                <button name="action_open_checkout_url" string="URL" type="object"
+                        icon="fa-external-link" invisible="not checkout_url"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_abandoned_checkout_kanban" model="ir.ui.view">
+        <field name="name">shopify.abandoned.checkout.kanban</field>
+        <field name="model">shopify.abandoned.checkout</field>
+        <field name="arch" type="xml">
+            <kanban default_group_by="state" class="o_kanban_small_column">
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click p-2">
+                            <div class="fw-bold"><field name="customer_name"/></div>
+                            <div class="text-muted small"><field name="email"/></div>
+                            <div class="mt-1">
+                                <strong><field name="total_price"/> <field name="currency"/></strong>
+                            </div>
+                            <div class="text-muted small mt-1"><field name="created_at"/></div>
+                            <div class="mt-2">
+                                <span t-if="record.odoo_lead_id.raw_value" class="badge text-bg-success">Lead Exists</span>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <record id="action_shopify_abandoned_checkout" model="ir.actions.act_window">
+        <field name="name">Abandoned Checkouts</field>
+        <field name="res_model">shopify.abandoned.checkout</field>
+        <field name="view_mode">list,kanban,form</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No abandoned checkouts yet</p>
+        <p>Abandoned carts import here and can be turned into CRM leads. Run <b>Sync → Import Abandoned Checkouts</b>.</p>
+    </field>
+    </record>
+
+    <!-- Search filters -->
+    <record id="view_shopify_abandoned_checkout_search" model="ir.ui.view">
+        <field name="name">shopify.abandoned.checkout.search</field>
+        <field name="model">shopify.abandoned.checkout</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="customer_name"/>
+                <field name="email"/>
+                <field name="instance_id"/>
+                <filter string="Open" name="open"
+                        domain="[('state', '=', 'open')]"/>
+                <filter string="Recovered" name="recovered"
+                        domain="[('state', '=', 'recovered')]"/>
+                <filter string="Lost" name="lost"
+                        domain="[('state', '=', 'lost')]"/>
+                <filter string="No Lead Yet" name="no_lead"
+                        domain="[('odoo_lead_id', '=', False), ('state', '=', 'open')]"/>
+                <separator/>
+                <group>
+                    <filter string="Store" name="by_store"
+                            context="{'group_by': 'instance_id'}"/>
+                    <filter string="State" name="by_state"
+                            context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+</odoo>

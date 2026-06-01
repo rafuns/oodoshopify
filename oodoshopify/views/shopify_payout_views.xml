@@ -1,0 +1,154 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ── Payout Form ── -->
+    <record id="view_shopify_payout_form" model="ir.ui.view">
+        <field name="name">shopify.payout.form</field>
+        <field name="model">shopify.payout</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_fetch_transactions" string="Fetch Transactions"
+                            type="object"/>
+                    <button name="action_create_journal_entry" string="Create Journal Entry"
+                            type="object" class="btn-primary"
+                            invisible="odoo_move_id or status != 'paid'"/>
+                    <button name="action_view_journal_entry" string="View Journal Entry"
+                            type="object"
+                            invisible="not odoo_move_id"/>
+                    <button name="action_mark_reconciled" string="Mark Reconciled"
+                            type="object"
+                            invisible="reconcile_state != 'entry_created'"/>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="scheduled,in_transit,paid"/>
+                </header>
+                <sheet>
+                    <div class="oe_button_box" name="button_box">
+                        <button name="action_fetch_transactions" type="object"
+                                class="oe_stat_button" icon="fa-exchange">
+                            <field name="transaction_count" widget="statinfo" string="Transactions"/>
+                        </button>
+                    </div>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group string="Payout">
+                            <field name="instance_id"/>
+                            <field name="issued_at"/>
+                            <field name="shopify_payout_id"/>
+                            <field name="reconcile_state" widget="badge"
+                                   decoration-success="reconcile_state == 'reconciled'"
+                                   decoration-warning="reconcile_state == 'entry_created'"
+                                   decoration-muted="reconcile_state == 'pending'"/>
+                        </group>
+                        <group string="Amount">
+                            <field name="currency"/>
+                            <field name="net_amount"/>
+                            <field name="total_fees"/>
+                            <field name="odoo_move_id"/>
+                        </group>
+                    </group>
+                    <group string="Summary Breakdown">
+                        <group string="Sales">
+                            <field name="charges_gross"/>
+                            <field name="charges_fee"/>
+                        </group>
+                        <group string="Refunds">
+                            <field name="refunds_gross"/>
+                            <field name="refunds_fee"/>
+                        </group>
+                        <group string="Adjustments">
+                            <field name="adjustments_gross"/>
+                            <field name="adjustments_fee"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Transactions">
+                            <field name="transaction_ids">
+                                <list decoration-muted="is_test">
+                                    <field name="tx_type_label"/>
+                                    <field name="source_order_name"/>
+                                    <field name="gross_amount"/>
+                                    <field name="fee_amount"/>
+                                    <field name="net_amount"/>
+                                    <field name="is_test" widget="boolean" optional="show"/>
+                                    <field name="shopify_tx_id" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Payout List ── -->
+    <record id="view_shopify_payout_list" model="ir.ui.view">
+        <field name="name">shopify.payout.list</field>
+        <field name="model">shopify.payout</field>
+        <field name="arch" type="xml">
+            <list decoration-success="status == 'paid'"
+                  decoration-warning="status in ('scheduled', 'in_transit')"
+                  decoration-danger="status in ('failed', 'cancelled')">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="issued_at"/>
+                <field name="net_amount"/>
+                <field name="total_fees"/>
+                <field name="currency"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'paid'"
+                       decoration-warning="status in ('scheduled','in_transit')"
+                       decoration-danger="status in ('failed','cancelled')"/>
+                <field name="reconcile_state" widget="badge"
+                       decoration-success="reconcile_state == 'reconciled'"
+                       decoration-warning="reconcile_state == 'entry_created'"
+                       decoration-muted="reconcile_state == 'pending'"/>
+                <field name="transaction_count"/>
+                <field name="odoo_move_id" optional="show"/>
+                <button name="action_create_journal_entry" string="Create Entry"
+                        type="object" icon="fa-book"
+                        invisible="odoo_move_id or status != 'paid'"/>
+                <button name="action_fetch_transactions" string="Transactions"
+                        type="object" icon="fa-list"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ── Payout Search ── -->
+    <record id="view_shopify_payout_search" model="ir.ui.view">
+        <field name="name">shopify.payout.search</field>
+        <field name="model">shopify.payout</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <filter string="Paid"      name="paid"      domain="[('status','=','paid')]"/>
+                <filter string="In Transit" name="in_transit" domain="[('status','=','in_transit')]"/>
+                <filter string="No Entry"  name="no_entry"  domain="[('odoo_move_id','=',False),('status','=','paid')]"/>
+                <separator/>
+                <filter string="Reconciled"     name="reconciled"
+                        domain="[('reconcile_state','=','reconciled')]"/>
+                <filter string="Needs Reconcile" name="needs_reconcile"
+                        domain="[('reconcile_state','!=','reconciled'),('status','=','paid')]"/>
+                <group>
+                    <filter string="Store"  name="by_store"  context="{'group_by':'instance_id'}"/>
+                    <filter string="Status" name="by_status" context="{'group_by':'status'}"/>
+                    <filter string="Month"  name="by_month"  context="{'group_by':'issued_at:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_payout" model="ir.actions.act_window">
+        <field name="name">Shopify Payouts</field>
+        <field name="res_model">shopify.payout</field>
+        <field name="view_mode">list,form</field>
+        <field name="context">{'search_default_paid': 1}</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No payouts yet</p>
+        <p>Run <b>Sync → Import Payouts</b> to pull Shopify Payments payouts for reconciliation.</p>
+    </field>
+    </record>
+</odoo>

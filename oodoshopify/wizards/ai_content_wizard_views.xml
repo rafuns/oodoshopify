@@ -1,0 +1,62 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_ai_content_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.ai.content.wizard.form</field>
+        <field name="model">shopify.ai.content.wizard</field>
+        <field name="arch" type="xml">
+            <form string="AI Product Content Studio">
+                <group invisible="result_log">
+                    <group>
+                        <field name="instance_id"/>
+                        <field name="product_ids" widget="many2many_tags"/>
+                        <field name="tone"/>
+                        <field name="language"/>
+                        <field name="push_after"/>
+                    </group>
+                    <group string="Generate">
+                        <field name="gen_title"/>
+                        <field name="gen_description"/>
+                        <field name="gen_seo"/>
+                        <field name="gen_tags"/>
+                    </group>
+                </group>
+                <div invisible="not result_log">
+                    <h3>Results</h3>
+                    <field name="result_log" nolabel="1" readonly="1" widget="text"/>
+                    <p class="text-muted">Generated content was written to the products
+                       (Description on the Odoo product). Review, then push to Shopify.</p>
+                </div>
+                <footer>
+                    <button name="action_generate" string="Generate" type="object"
+                            class="btn-primary" invisible="result_log"/>
+                    <button string="Close" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_ai_content_wizard" model="ir.actions.act_window">
+        <field name="name">AI Content Studio</field>
+        <field name="res_model">shopify.ai.content.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+
+    <!-- Bulk action: appears in the Products list "Actions" menu -->
+    <record id="action_bulk_ai_content" model="ir.actions.server">
+        <field name="name">AI: Generate Content</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="binding_model_id" ref="model_shopify_product"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = {
+    'type': 'ir.actions.act_window',
+    'res_model': 'shopify.ai.content.wizard',
+    'view_mode': 'form',
+    'target': 'new',
+    'context': {'active_model': 'shopify.product', 'active_ids': records.ids},
+}
+        </field>
+    </record>
+</odoo>

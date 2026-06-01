@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sync_products_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.sync.products.wizard.form</field>
+        <field name="model">shopify.sync.products.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Sync Products / Prices">
+                <group>
+                    <field name="instance_id"/>
+                    <field name="direction"/>
+                    <field name="product_ids" widget="many2many_tags"
+                           invisible="direction == 'import'"/>
+                    <field name="run_in_background"
+                           invisible="direction != 'import'"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" string="Run Sync" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_shopify_sync_products_wizard" model="ir.actions.act_window">
+        <field name="name">Sync Products / Prices</field>
+        <field name="res_model">shopify.sync.products.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

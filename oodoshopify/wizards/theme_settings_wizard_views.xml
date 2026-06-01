@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_theme_settings_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.theme.settings.wizard.form</field>
+        <field name="model">shopify.theme.settings.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Theme Settings">
+                <group>
+                    <field name="instance_id"/>
+                    <field name="action"/>
+                    <field name="theme_id"
+                           invisible="action == 'sync_themes'"
+                           required="action != 'sync_themes'"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" string="Run" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_shopify_theme_settings_wizard" model="ir.actions.act_window">
+        <field name="name">Theme Settings</field>
+        <field name="res_model">shopify.theme.settings.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

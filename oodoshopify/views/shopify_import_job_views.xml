@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_import_job_list" model="ir.ui.view">
+        <field name="name">shopify.import.job.list</field>
+        <field name="model">shopify.import.job</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'running'"
+                  decoration-success="state == 'done'"
+                  decoration-danger="state == 'failed'"
+                  create="false">
+                <field name="display_name" string="Import"/>
+                <field name="instance_id"/>
+                <field name="kind"/>
+                <field name="records_done"/>
+                <field name="records_total" optional="show"/>
+                <field name="pages_done" optional="show"/>
+                <field name="progress" widget="progressbar"/>
+                <field name="date_start"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'running'"
+                       decoration-success="state == 'done'"
+                       decoration-danger="state == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_import_job_form" model="ir.ui.view">
+        <field name="name">shopify.import.job.form</field>
+        <field name="model">shopify.import.job</field>
+        <field name="arch" type="xml">
+            <form create="false">
+                <header>
+                    <button name="action_view_queue" string="View Page Jobs"
+                            type="object" icon="fa-list"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="running,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="display_name" readonly="1"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="kind"/>
+                            <field name="progress" widget="progressbar"/>
+                        </group>
+                        <group>
+                            <field name="records_done"/>
+                            <field name="records_total"/>
+                            <field name="pages_done"/>
+                            <field name="date_start"/>
+                            <field name="date_done"/>
+                        </group>
+                    </group>
+                    <group string="Error" invisible="state != 'failed'">
+                        <field name="error_message" nolabel="1" readonly="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_import_job_search" model="ir.ui.view">
+        <field name="name">shopify.import.job.search</field>
+        <field name="model">shopify.import.job</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="instance_id"/>
+                <filter string="Running" name="running" domain="[('state', '=', 'running')]"/>
+                <filter string="Completed" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <group>
+                    <filter string="Store" name="by_store" context="{'group_by': 'instance_id'}"/>
+                    <filter string="Type" name="by_kind" context="{'group_by': 'kind'}"/>
+                    <filter string="Status" name="by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_import_job" model="ir.actions.act_window">
+        <field name="name">Import Jobs</field>
+        <field name="res_model">shopify.import.job</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No imports yet</p>
+            <p>Background imports started from the <b>Sync</b> menu appear here with
+               a live progress bar. Each row is one import; open it to see details
+               or the underlying page jobs.</p>
+        </field>
+    </record>
+</odoo>

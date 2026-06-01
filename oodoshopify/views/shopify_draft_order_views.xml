@@ -1,0 +1,111 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_draft_order_form" model="ir.ui.view">
+        <field name="name">shopify.draft.order.form</field>
+        <field name="model">shopify.draft.order</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary"
+                            invisible="status not in ('draft',)"/>
+                    <button name="action_send_invoice" string="Send Invoice"
+                            type="object"
+                            invisible="status not in ('open',)"/>
+                    <button name="action_complete" string="Complete → Order"
+                            type="object" class="btn-primary"
+                            invisible="status not in ('open', 'invoice_sent')"/>
+                    <button name="action_delete_from_shopify" string="Delete"
+                            type="object" class="btn-danger"
+                            invisible="status == 'completed'"
+                            confirm="Delete this draft order on Shopify?"/>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="draft,open,invoice_sent,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="odoo_partner_id"/>
+                            <field name="customer_email"/>
+                            <field name="odoo_sale_order_id"/>
+                        </group>
+                        <group>
+                            <field name="shopify_draft_id"/>
+                            <field name="total_price"/>
+                            <field name="currency"/>
+                            <field name="invoice_url" widget="url"
+                                   invisible="not invoice_url"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="product_name"/>
+                                    <field name="sku"/>
+                                    <field name="quantity"/>
+                                    <field name="unit_price"/>
+                                    <field name="subtotal"/>
+                                    <field name="odoo_product_id"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_draft_order_list" model="ir.ui.view">
+        <field name="name">shopify.draft.order.list</field>
+        <field name="model">shopify.draft.order</field>
+        <field name="arch" type="xml">
+            <list decoration-success="status == 'completed'"
+                  decoration-info="status in ('open','invoice_sent')">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="customer_email"/>
+                <field name="total_price"/>
+                <field name="currency"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'completed'"
+                       decoration-info="status in ('open','invoice_sent')"
+                       decoration-warning="status == 'draft'"/>
+                <field name="odoo_sale_order_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_draft_order" model="ir.actions.act_window">
+        <field name="name">Draft Orders</field>
+        <field name="res_model">shopify.draft.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No draft orders yet</p>
+        <p>Draft orders are quotes / wholesale orders. Create one and push it to Shopify, or import existing drafts.</p>
+    </field>
+    </record>
+
+    <!-- Button on Sale Order form to push a quotation to Shopify as a draft -->
+    <record id="view_sale_order_form_shopify_draft" model="ir.ui.view">
+        <field name="name">sale.order.form.shopify.draft</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <xpath expr="//div[hasclass('oe_button_box')]" position="inside">
+                <button name="action_create_shopify_draft" type="object"
+                        class="oe_stat_button" icon="fa-shopping-bag"
+                        invisible="state not in ('draft', 'sent')">
+                    <div class="o_stat_info">
+                        <span class="o_stat_text">Shopify Draft</span>
+                    </div>
+                </button>
+            </xpath>
+        </field>
+    </record>
+</odoo>

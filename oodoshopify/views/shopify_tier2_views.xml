@@ -1,0 +1,215 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ══════════════ GIFT CARDS ══════════════ -->
+    <record id="view_shopify_gift_card_form" model="ir.ui.view">
+        <field name="name">shopify.gift.card.form</field>
+        <field name="model">shopify.gift.card</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_on_shopify" string="Create on Shopify"
+                            type="object" class="btn-primary"
+                            invisible="shopify_gift_card_gid"/>
+                    <button name="action_deactivate" string="Deactivate"
+                            type="object" class="btn-danger"
+                            invisible="not shopify_gift_card_gid or not enabled"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="shopify_customer_id"/>
+                            <field name="customer_email"/>
+                            <field name="initial_value"/>
+                        </group>
+                        <group>
+                            <field name="balance" readonly="1"/>
+                            <field name="currency"/>
+                            <field name="enabled" readonly="1"/>
+                            <field name="expires_on"/>
+                            <field name="last_characters" readonly="1"/>
+                            <field name="generated_code" readonly="1"
+                                   invisible="not generated_code"/>
+                        </group>
+                    </group>
+                    <group string="Note"><field name="note" nolabel="1"/></group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_gift_card_list" model="ir.ui.view">
+        <field name="name">shopify.gift.card.list</field>
+        <field name="model">shopify.gift.card</field>
+        <field name="arch" type="xml">
+            <list decoration-muted="not enabled">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="customer_email"/>
+                <field name="balance"/>
+                <field name="initial_value"/>
+                <field name="currency"/>
+                <field name="enabled" widget="boolean"/>
+                <field name="expires_on"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_gift_card" model="ir.actions.act_window">
+        <field name="name">Gift Cards</field>
+        <field name="res_model">shopify.gift.card</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No gift cards yet</p>
+        <p>Import existing gift cards or issue new ones and sync them with Shopify.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ MARKETS ══════════════ -->
+    <record id="view_shopify_market_form" model="ir.ui.view">
+        <field name="name">shopify.market.form</field>
+        <field name="model">shopify.market</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_market_prices" string="Push Prices to Market"
+                            type="object" class="btn-primary"
+                            invisible="not odoo_pricelist_id"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1>
+                            <field name="name"/>
+                            <span class="badge bg-info ms-2" invisible="not is_primary">Primary</span>
+                        </h1>
+                    </div>
+                    <group>
+                        <group string="Shopify">
+                            <field name="instance_id"/>
+                            <field name="handle" readonly="1"/>
+                            <field name="enabled" readonly="1"/>
+                            <field name="base_currency" readonly="1"/>
+                            <field name="region_codes" readonly="1"/>
+                        </group>
+                        <group string="Odoo Mapping">
+                            <field name="odoo_pricelist_id"/>
+                            <field name="odoo_company_id"/>
+                            <field name="odoo_warehouse_id"/>
+                            <field name="shopify_price_list_gid"/>
+                            <field name="last_price_push" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_market_list" model="ir.ui.view">
+        <field name="name">shopify.market.list</field>
+        <field name="model">shopify.market</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="base_currency"/>
+                <field name="region_codes"/>
+                <field name="is_primary" widget="boolean"/>
+                <field name="enabled" widget="boolean"/>
+                <field name="odoo_pricelist_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_market" model="ir.actions.act_window">
+        <field name="name">Markets</field>
+        <field name="res_model">shopify.market</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No markets yet</p>
+        <p>Markets define currencies and regions. Import them from your connected store.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ SELLING PLANS ══════════════ -->
+    <record id="view_shopify_selling_plan_group_form" model="ir.ui.view">
+        <field name="name">shopify.selling.plan.group.form</field>
+        <field name="model">shopify.selling.plan.group</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_on_shopify" string="Create on Shopify"
+                            type="object" class="btn-primary"
+                            invisible="shopify_group_gid"/>
+                    <button name="action_delete_from_shopify" string="Delete"
+                            type="object" class="btn-danger"
+                            invisible="not shopify_group_gid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <field name="instance_id"/>
+                        <field name="merchant_code"/>
+                        <field name="products_count" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Plans">
+                            <field name="plan_ids">
+                                <list editable="bottom">
+                                    <field name="name"/>
+                                    <field name="interval"/>
+                                    <field name="interval_count"/>
+                                    <field name="discount_percentage"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_selling_plan_group_list" model="ir.ui.view">
+        <field name="name">shopify.selling.plan.group.list</field>
+        <field name="model">shopify.selling.plan.group</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="merchant_code"/>
+                <field name="products_count"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_selling_plan_group" model="ir.actions.act_window">
+        <field name="name">Subscriptions / Selling Plans</field>
+        <field name="res_model">shopify.selling.plan.group</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No subscriptions yet</p>
+        <p>Selling plans / subscription groups sync here from Shopify.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ STORE CREDIT WIZARD ══════════════ -->
+    <record id="view_shopify_store_credit_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.store.credit.wizard.form</field>
+        <field name="model">shopify.store.credit.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Adjust Store Credit">
+                <group>
+                    <field name="customer_id" readonly="1"/>
+                    <field name="current_balance" readonly="1"/>
+                    <field name="operation"/>
+                    <field name="amount"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" string="Apply" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

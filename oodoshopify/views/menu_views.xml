@@ -1,0 +1,225 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ══════════ ROOT ══════════ -->
+    <menuitem id="menu_shopify_root" name="Shopify" sequence="80"
+              web_icon="oodoshopify,static/description/icon.png"
+              groups="shopify_group_user"/>
+
+    <!-- ══════════ SECTION MENUS (defined before any child references them) ══════════ -->
+    <!-- Operational sections are gated on shopify_group_connected — hidden
+         until the first successful Shopify connection exists. -->
+    <menuitem id="menu_shopify_operations" name="Operations"
+              parent="menu_shopify_root" sequence="10"
+              groups="shopify_group_connected"/>
+    <menuitem id="menu_shopify_themes" name="Theme Manager"
+              parent="menu_shopify_root" sequence="20"
+              action="action_shopify_theme"
+              groups="shopify_group_connected"/>
+    <menuitem id="menu_shopify_sync" name="Sync"
+              parent="menu_shopify_root" sequence="30"
+              groups="shopify_group_connected"/>
+    <menuitem id="menu_shopify_marketing" name="Marketing"
+              parent="menu_shopify_root" sequence="35"
+              groups="shopify_group_connected"/>
+    <menuitem id="menu_shopify_monitoring" name="Monitoring"
+              parent="menu_shopify_root" sequence="40"
+              groups="shopify_group_connected"/>
+    <menuitem id="menu_shopify_content" name="Content"
+              parent="menu_shopify_root" sequence="45"
+              groups="shopify_group_connected"/>
+    <menuitem id="menu_shopify_analytics" name="Analytics"
+              parent="menu_shopify_root" sequence="50"
+              groups="shopify_group_connected"/>
+    <!-- Always visible so the user can connect / configure -->
+    <menuitem id="menu_shopify_config" name="Configuration"
+              parent="menu_shopify_root" sequence="60"
+              groups="shopify_group_manager"/>
+
+    <!-- ══════════ TOP-LEVEL LEAVES ══════════ -->
+    <!-- Dashboard gated (empty until connected); Instances + Setup Wizard always visible -->
+    <menuitem id="menu_shopify_dashboard" name="Dashboard"
+              parent="menu_shopify_root" sequence="0"
+              action="action_shopify_dashboard"
+              groups="shopify_group_connected"/>
+    <menuitem id="menu_shopify_instances" name="Instances"
+              parent="menu_shopify_root" sequence="1"
+              action="action_shopify_instance"
+              groups="shopify_group_manager"/>
+    <menuitem id="menu_shopify_setup_wizard" name="Setup Wizard"
+              parent="menu_shopify_root" sequence="2"
+              action="action_shopify_setup_wizard"
+              groups="shopify_group_manager"/>
+
+    <!-- ══════════ OPERATIONS ══════════ -->
+    <menuitem id="menu_shopify_orders" name="Orders"
+              parent="menu_shopify_operations" sequence="1"
+              action="action_shopify_order"/>
+    <menuitem id="menu_shopify_products" name="Products"
+              parent="menu_shopify_operations" sequence="2"
+              action="action_shopify_product"/>
+    <menuitem id="menu_shopify_customers" name="Customers"
+              parent="menu_shopify_operations" sequence="3"
+              action="action_shopify_customer"/>
+    <menuitem id="menu_shopify_locations" name="Locations"
+              parent="menu_shopify_operations" sequence="4"
+              action="action_shopify_location"/>
+    <menuitem id="menu_shopify_refunds" name="Refunds"
+              parent="menu_shopify_operations" sequence="5"
+              action="action_shopify_refund"/>
+    <menuitem id="menu_shopify_abandoned" name="Abandoned Checkouts"
+              parent="menu_shopify_operations" sequence="6"
+              action="action_shopify_abandoned_checkout"/>
+    <menuitem id="menu_shopify_payouts" name="Payouts"
+              parent="menu_shopify_operations" sequence="7"
+              action="action_shopify_payout"/>
+    <menuitem id="menu_shopify_collections" name="Collections"
+              parent="menu_shopify_operations" sequence="8"
+              action="action_shopify_collection"/>
+    <menuitem id="menu_shopify_draft_orders" name="Draft Orders"
+              parent="menu_shopify_operations" sequence="9"
+              action="action_shopify_draft_order"/>
+    <menuitem id="menu_shopify_returns" name="Returns / RMA"
+              parent="menu_shopify_operations" sequence="10"
+              action="action_shopify_return"/>
+    <menuitem id="menu_shopify_companies" name="B2B Companies"
+              parent="menu_shopify_operations" sequence="11"
+              action="action_shopify_company"/>
+    <menuitem id="menu_shopify_inventory_transfers" name="Inventory Transfers"
+              parent="menu_shopify_operations" sequence="12"
+              action="action_shopify_inventory_transfer"/>
+    <menuitem id="menu_shopify_replenishment" name="Replenishment"
+              parent="menu_shopify_operations" sequence="13"
+              action="action_shopify_replenishment"/>
+
+    <!-- ══════════ SYNC ══════════ -->
+    <menuitem id="menu_shopify_sync_products" name="Sync Products / Prices"
+              parent="menu_shopify_sync" sequence="1"
+              action="action_shopify_sync_products_wizard"/>
+    <menuitem id="menu_shopify_sync_orders" name="Sync Orders"
+              parent="menu_shopify_sync" sequence="2"
+              action="action_shopify_sync_orders_wizard"/>
+    <menuitem id="menu_shopify_sync_themes" name="Theme Settings"
+              parent="menu_shopify_sync" sequence="3"
+              action="action_shopify_theme_settings_wizard"/>
+    <menuitem id="menu_shopify_workflow" name="Order Workflows"
+              parent="menu_shopify_sync" sequence="4"
+              action="action_shopify_workflow"/>
+    <menuitem id="menu_shopify_scheduled_push" name="Scheduled Pushes"
+              parent="menu_shopify_sync" sequence="6"
+              action="action_shopify_scheduled_push"/>
+    <menuitem id="menu_shopify_nl_console" name="Sync Console (AI)"
+              parent="menu_shopify_sync" sequence="7"
+              action="action_nl_console_wizard"/>
+    <menuitem id="menu_shopify_scan_replenishment" name="Scan Replenishment"
+              parent="menu_shopify_sync" sequence="14"
+              action="action_server_scan_replenishment"/>
+    <menuitem id="menu_shopify_import_metaobjects" name="Import Metaobjects"
+              parent="menu_shopify_sync" sequence="15"
+              action="action_server_import_metaobjects"/>
+    <!-- One-click manual imports (reuse the scheduled-job methods) -->
+    <menuitem id="menu_shopify_sync_customers" name="Import Customers"
+              parent="menu_shopify_sync" sequence="10"
+              action="action_server_import_customers"/>
+    <menuitem id="menu_shopify_sync_collections" name="Sync Collections"
+              parent="menu_shopify_sync" sequence="11"
+              action="action_server_sync_collections"/>
+    <menuitem id="menu_shopify_sync_payouts" name="Import Payouts"
+              parent="menu_shopify_sync" sequence="12"
+              action="action_server_import_payouts"/>
+    <menuitem id="menu_shopify_sync_abandoned" name="Import Abandoned Checkouts"
+              parent="menu_shopify_sync" sequence="13"
+              action="action_server_import_abandoned"/>
+    <!-- Admin shortcut to the automatic timers -->
+    <menuitem id="menu_shopify_scheduled_jobs" name="Scheduled Sync Jobs"
+              parent="menu_shopify_sync" sequence="20"
+              action="action_shopify_scheduled_jobs"
+              groups="base.group_system"/>
+
+    <!-- ══════════ MARKETING ══════════ -->
+    <menuitem id="menu_shopify_discounts" name="Discounts"
+              parent="menu_shopify_marketing" sequence="1"
+              action="action_shopify_discount"/>
+    <menuitem id="menu_shopify_pull_discounts" name="Pull Discounts"
+              parent="menu_shopify_marketing" sequence="5"
+              action="action_server_pull_discounts"/>
+    <menuitem id="menu_shopify_gift_cards" name="Gift Cards"
+              parent="menu_shopify_marketing" sequence="2"
+              action="action_shopify_gift_card"/>
+    <menuitem id="menu_shopify_subscriptions" name="Subscriptions"
+              parent="menu_shopify_marketing" sequence="3"
+              action="action_shopify_selling_plan_group"/>
+    <menuitem id="menu_shopify_scheduled_sales" name="Scheduled Sales"
+              parent="menu_shopify_marketing" sequence="4"
+              action="action_shopify_scheduled_sale"/>
+    <menuitem id="menu_shopify_ai_content" name="AI Content Studio"
+              parent="menu_shopify_marketing" sequence="6"
+              action="action_ai_content_wizard"/>
+    <menuitem id="menu_shopify_repricing" name="Dynamic Repricing"
+              parent="menu_shopify_marketing" sequence="7"
+              action="action_shopify_repricing"/>
+
+    <!-- ══════════ CONTENT ══════════ -->
+    <menuitem id="menu_shopify_blogs" name="Blogs"
+              parent="menu_shopify_content" sequence="1"
+              action="action_shopify_blog"/>
+    <menuitem id="menu_shopify_articles" name="Articles"
+              parent="menu_shopify_content" sequence="2"
+              action="action_shopify_article"/>
+    <menuitem id="menu_shopify_pages" name="Pages"
+              parent="menu_shopify_content" sequence="3"
+              action="action_shopify_page"/>
+    <menuitem id="menu_shopify_files" name="Files / Media"
+              parent="menu_shopify_content" sequence="4"
+              action="action_shopify_file"/>
+    <menuitem id="menu_shopify_translations" name="Translations"
+              parent="menu_shopify_content" sequence="5"
+              action="action_shopify_translation"/>
+
+    <!-- ══════════ MONITORING ══════════ -->
+    <menuitem id="menu_shopify_queue" name="Sync Queue"
+              parent="menu_shopify_monitoring" sequence="1"
+              action="action_shopify_queue"/>
+    <menuitem id="menu_shopify_logs" name="Activity Logs"
+              parent="menu_shopify_monitoring" sequence="2"
+              action="action_shopify_log"/>
+    <menuitem id="menu_shopify_bulk_operations" name="Bulk Operations"
+              parent="menu_shopify_monitoring" sequence="3"
+              action="action_shopify_bulk_operation"/>
+    <menuitem id="menu_shopify_import_jobs" name="Import Jobs"
+              parent="menu_shopify_monitoring" sequence="4"
+              action="action_shopify_import_job"/>
+    <menuitem id="menu_shopify_drift" name="Sync Drift"
+              parent="menu_shopify_monitoring" sequence="5"
+              action="action_shopify_drift"/>
+
+    <!-- ══════════ ANALYTICS ══════════ -->
+    <menuitem id="menu_shopify_order_graph" name="Revenue"
+              parent="menu_shopify_analytics" sequence="1"
+              action="action_shopify_order_graph"/>
+    <menuitem id="menu_shopify_sales_report" name="Sales Analysis"
+              parent="menu_shopify_analytics" sequence="2"
+              action="action_shopify_sales_report"/>
+    <menuitem id="menu_shopify_margin" name="Profit Margin"
+              parent="menu_shopify_analytics" sequence="3"
+              action="action_shopify_margin"/>
+    <menuitem id="menu_shopify_scheduled_reports" name="Scheduled Reports"
+              parent="menu_shopify_analytics" sequence="3"
+              action="action_shopify_scheduled_report"/>
+
+    <!-- ══════════ CONFIGURATION ══════════ -->
+    <menuitem id="menu_shopify_shipping_method" name="Shipping Methods"
+              parent="menu_shopify_config" sequence="1"
+              action="action_shopify_shipping_method"/>
+    <menuitem id="menu_shopify_metafield_mapping" name="Metafield Mappings"
+              parent="menu_shopify_config" sequence="2"
+              action="action_shopify_metafield_mapping"/>
+    <menuitem id="menu_shopify_metafields" name="All Metafields"
+              parent="menu_shopify_config" sequence="3"
+              action="action_shopify_metafield"/>
+    <menuitem id="menu_shopify_markets" name="Markets"
+              parent="menu_shopify_config" sequence="4"
+              action="action_shopify_market"/>
+    <menuitem id="menu_shopify_segments" name="Customer Segments"
+              parent="menu_shopify_config" sequence="5"
+              action="action_shopify_segment"/>
+</odoo>

@@ -1,0 +1,210 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!--
+      One-click sync server actions for the Sync menu. Each reuses the exact
+      same method the matching scheduled job calls, so behaviour is identical —
+      it just runs now, on demand, for every connected store.
+    -->
+
+    <record id="action_server_import_customers" model="ir.actions.server">
+        <field name="name">Import Customers</field>
+        <field name="model_id" ref="model_shopify_customer"/>
+        <field name="state">code</field>
+        <field name="code">
+# Run as a chunked background import (one page per job) for every connected
+# store that has customer sync enabled — non-blocking and scalable.
+instances = env['shopify.instance'].search([('state', '=', 'connected'), ('sync_customers', '=', True)])
+for inst in instances:
+    env['shopify.queue'].enqueue_historical_import(inst, 'customers', {'chunked': True})
+msg = ('Customer import started in the background for %d store(s). '
+       'Track progress in Monitoring → Sync Queue.') % len(instances) if instances \
+      else 'No connected stores with customer sync enabled.'
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Import Customers',
+        'message': msg,
+        'type': 'success' if instances else 'warning',
+    },
+}
+        </field>
+    </record>
+
+    <record id="action_server_sync_collections" model="ir.actions.server">
+        <field name="name">Sync Collections</field>
+        <field name="model_id" ref="model_shopify_collection"/>
+        <field name="state">code</field>
+        <field name="code">
+instances = env['shopify.instance'].search([('state', '=', 'connected')])
+for inst in instances:
+    env['shopify.queue'].enqueue_historical_import(inst, 'collections', {'chunked': True})
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Sync Collections',
+        'message': ('Collection sync started in the background for %d store(s). '
+                    'Track progress in Monitoring → Sync Queue.') % len(instances)
+                   if instances else 'No connected stores.',
+        'type': 'success' if instances else 'warning',
+    },
+}
+        </field>
+    </record>
+
+    <record id="action_server_import_payouts" model="ir.actions.server">
+        <field name="name">Import Payouts</field>
+        <field name="model_id" ref="model_shopify_payout"/>
+        <field name="state">code</field>
+        <field name="code">
+instances = env['shopify.instance'].search([('state', '=', 'connected')])
+for inst in instances:
+    env['shopify.queue'].enqueue_historical_import(inst, 'payouts', {'chunked': True})
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Import Payouts',
+        'message': ('Payout import started in the background for %d store(s). '
+                    'Track progress in Monitoring → Sync Queue.') % len(instances)
+                   if instances else 'No connected stores.',
+        'type': 'success' if instances else 'warning',
+    },
+}
+        </field>
+    </record>
+
+    <record id="action_server_import_abandoned" model="ir.actions.server">
+        <field name="name">Import Abandoned Checkouts</field>
+        <field name="model_id" ref="model_shopify_abandoned_checkout"/>
+        <field name="state">code</field>
+        <field name="code">
+instances = env['shopify.instance'].search([('state', '=', 'connected')])
+for inst in instances:
+    env['shopify.queue'].enqueue_historical_import(inst, 'abandoned', {'chunked': True, 'days_back': 30})
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Import Abandoned Checkouts',
+        'message': ('Abandoned-checkout import started in the background for %d store(s). '
+                    'Track progress in Monitoring → Sync Queue.') % len(instances)
+                   if instances else 'No connected stores.',
+        'type': 'success' if instances else 'warning',
+    },
+}
+        </field>
+    </record>
+
+    <record id="action_server_pull_discounts" model="ir.actions.server">
+        <field name="name">Pull Discounts</field>
+        <field name="model_id" ref="model_shopify_discount"/>
+        <field name="state">code</field>
+        <field name="code">
+instances = env['shopify.instance'].search([('state', '=', 'connected')])
+for inst in instances:
+    env['shopify.queue'].enqueue_historical_import(inst, 'discounts', {'chunked': True})
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Pull Discounts',
+        'message': ('Discount import started in the background for %d store(s). '
+                    'Track progress in Monitoring → Import Jobs.') % len(instances)
+                   if instances else 'No connected stores.',
+        'type': 'success' if instances else 'warning',
+    },
+}
+        </field>
+    </record>
+
+    <!-- ══════════ Bulk actions (appear in the list "Actions" menu on selection) ══════════ -->
+    <record id="action_bulk_push_discounts" model="ir.actions.server">
+        <field name="name">Push to Shopify</field>
+        <field name="model_id" ref="model_shopify_discount"/>
+        <field name="binding_model_id" ref="model_shopify_discount"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_push_to_shopify()</field>
+    </record>
+
+    <record id="action_bulk_push_products" model="ir.actions.server">
+        <field name="name">Push to Shopify</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="binding_model_id" ref="model_shopify_product"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_export_to_shopify()</field>
+    </record>
+
+    <record id="action_bulk_push_prices" model="ir.actions.server">
+        <field name="name">Push Prices to Shopify</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="binding_model_id" ref="model_shopify_product"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_push_prices()</field>
+    </record>
+
+    <record id="action_bulk_sync_inventory" model="ir.actions.server">
+        <field name="name">Sync Inventory to Shopify</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="binding_model_id" ref="model_shopify_product"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_sync_inventory()</field>
+    </record>
+
+    <record id="action_bulk_push_customers" model="ir.actions.server">
+        <field name="name">Push to Shopify</field>
+        <field name="model_id" ref="model_shopify_customer"/>
+        <field name="binding_model_id" ref="model_shopify_customer"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_export_to_shopify()</field>
+    </record>
+
+    <record id="action_bulk_merge_customers" model="ir.actions.server">
+        <field name="name">Merge Duplicates on Shopify</field>
+        <field name="model_id" ref="model_shopify_customer"/>
+        <field name="binding_model_id" ref="model_shopify_customer"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+if len(records) != 2:
+    raise UserError("Select exactly two customers to merge (the first is kept).")
+keeper, dup = records[0], records[1]
+dup.merge_into_on_shopify(keeper)
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {'title': 'Customers Merged',
+               'message': 'Merged into %s on Shopify.' % keeper.display_name,
+               'type': 'success'},
+}
+        </field>
+    </record>
+
+    <record id="action_bulk_push_collections" model="ir.actions.server">
+        <field name="name">Push to Shopify</field>
+        <field name="model_id" ref="model_shopify_collection"/>
+        <field name="binding_model_id" ref="model_shopify_collection"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">records.action_push_to_shopify()</field>
+    </record>
+
+    <!-- Shortcut to the Shopify scheduled jobs (admins only — ir.cron needs Settings access) -->
+    <record id="action_shopify_scheduled_jobs" model="ir.actions.act_window">
+        <field name="name">Scheduled Sync Jobs</field>
+        <field name="res_model">ir.cron</field>
+        <field name="view_mode">list,form</field>
+        <field name="domain">[('name', 'like', 'Shopify')]</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No Shopify scheduled jobs found</p>
+            <p>These run syncing automatically on a timer. Open one to change its
+               frequency or use <b>Run Manually</b> to trigger it now.</p>
+        </field>
+    </record>
+</odoo>

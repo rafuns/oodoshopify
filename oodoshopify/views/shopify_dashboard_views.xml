@@ -1,0 +1,125 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_dashboard_kanban" model="ir.ui.view">
+        <field name="name">shopify.dashboard.kanban</field>
+        <field name="model">shopify.dashboard</field>
+        <field name="arch" type="xml">
+            <kanban class="o_kanban_dashboard" create="false" edit="false" delete="false">
+                <templates>
+                    <t t-name="card">
+                        <div class="oe_kanban_global_click p-3">
+                            <div class="d-flex justify-content-between align-items-center mb-1">
+                                <strong class="fs-5"><field name="instance_name"/></strong>
+                                <field name="state" widget="badge"
+                                       decoration-success="state == 'connected'"
+                                       decoration-danger="state == 'error'"
+                                       decoration-warning="state == 'draft'"/>
+                            </div>
+                            <div class="text-muted small mb-2"><field name="shop_domain"/></div>
+
+                            <div class="row text-center">
+                                <div class="col-3">
+                                    <div class="fs-4 fw-bold"><field name="total_orders"/></div>
+                                    <div class="text-muted small">Orders</div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="fs-4 fw-bold"><field name="orders_today"/></div>
+                                    <div class="text-muted small">Today</div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="fs-4 fw-bold"><field name="customers_total"/></div>
+                                    <div class="text-muted small">Customers</div>
+                                </div>
+                                <div class="col-3">
+                                    <div class="fs-4 fw-bold"><field name="revenue_total"/></div>
+                                    <div class="text-muted small">Revenue</div>
+                                </div>
+                            </div>
+
+                            <hr class="my-2"/>
+
+                            <div class="row text-center">
+                                <div class="col-4">
+                                    <div class="fw-bold text-success"><field name="products_synced"/></div>
+                                    <div class="text-muted small">Synced</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold"><field name="products_pending"/></div>
+                                    <div class="text-muted small">Pending</div>
+                                </div>
+                                <div class="col-4">
+                                    <div class="fw-bold"><field name="queue_failed"/></div>
+                                    <div class="text-muted small">Failed</div>
+                                </div>
+                            </div>
+
+                            <!-- Health row -->
+                            <div class="d-flex justify-content-between align-items-center mt-2 small text-muted">
+                                <span>Last order: <field name="last_order_date" widget="date"/></span>
+                                <span t-if="record.running_imports.raw_value &gt; 0"
+                                      class="badge text-bg-info">
+                                    <field name="running_imports"/> import(s) running
+                                </span>
+                            </div>
+
+                            <!-- Quick actions -->
+                            <div class="mt-2 d-flex gap-1 flex-wrap">
+                                <button name="action_sync_products" type="object"
+                                        class="btn btn-sm btn-primary">Sync Products</button>
+                                <button name="action_sync_orders" type="object"
+                                        class="btn btn-sm btn-primary">Sync Orders</button>
+                                <button name="action_view_running_imports" type="object"
+                                        class="btn btn-sm btn-secondary">Imports</button>
+                                <button name="action_view_pending_queue" type="object"
+                                        class="btn btn-sm btn-light"
+                                        t-if="record.queue_failed.raw_value &gt; 0">
+                                    <i class="fa fa-exclamation-triangle text-danger"/> Failures
+                                </button>
+                            </div>
+                        </div>
+                    </t>
+                </templates>
+            </kanban>
+        </field>
+    </record>
+
+    <!-- Order trend graph — reuses shopify.order model -->
+    <record id="view_shopify_order_graph" model="ir.ui.view">
+        <field name="name">shopify.order.graph</field>
+        <field name="model">shopify.order</field>
+        <field name="arch" type="xml">
+            <graph string="Orders" type="bar">
+                <field name="shopify_order_date" interval="day"/>
+                <field name="total_price" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_shopify_order_pivot" model="ir.ui.view">
+        <field name="name">shopify.order.pivot</field>
+        <field name="model">shopify.order</field>
+        <field name="arch" type="xml">
+            <pivot string="Orders">
+                <field name="instance_id" type="row"/>
+                <field name="financial_status" type="col"/>
+                <field name="total_price" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="action_shopify_dashboard" model="ir.actions.act_window">
+        <field name="name">Shopify Dashboard</field>
+        <field name="res_model">shopify.dashboard</field>
+        <field name="view_mode">kanban</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No connected stores yet</p>
+        <p>Connect a Shopify store from <b>Instances</b> to see live orders, revenue and sync KPIs here.</p>
+    </field>
+    </record>
+
+    <record id="action_shopify_order_graph" model="ir.actions.act_window">
+        <field name="name">Order Revenue</field>
+        <field name="res_model">shopify.order</field>
+        <field name="view_mode">graph,pivot,list</field>
+    </record>
+</odoo>

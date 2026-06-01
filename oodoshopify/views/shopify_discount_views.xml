@@ -1,0 +1,99 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_discount_form" model="ir.ui.view">
+        <field name="name">shopify.discount.form</field>
+        <field name="model">shopify.discount</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary"/>
+                    <button name="action_delete_from_shopify" string="Delete from Shopify"
+                            type="object" class="btn-danger"
+                            invisible="not shopify_discount_gid"
+                            confirm="Delete this discount on Shopify?"/>
+                    <field name="status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Summer Sale"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="discount_type" widget="radio"/>
+                            <field name="code" placeholder="SUMMER20"
+                                   invisible="discount_type != 'code'"
+                                   required="discount_type == 'code'"/>
+                        </group>
+                        <group>
+                            <field name="value_type"/>
+                            <field name="value"/>
+                            <field name="shopify_discount_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <group string="Validity &amp; Limits">
+                        <group>
+                            <field name="starts_at"/>
+                            <field name="ends_at"/>
+                        </group>
+                        <group>
+                            <field name="usage_limit"
+                                   invisible="discount_type != 'code'"/>
+                            <field name="used_count" readonly="1"
+                                   invisible="discount_type != 'code'"/>
+                        </group>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_discount_list" model="ir.ui.view">
+        <field name="name">shopify.discount.list</field>
+        <field name="model">shopify.discount</field>
+        <field name="arch" type="xml">
+            <list decoration-success="status == 'active'"
+                  decoration-muted="status == 'expired'">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="discount_type" widget="badge"/>
+                <field name="code"/>
+                <field name="value_type"/>
+                <field name="value"/>
+                <field name="used_count"/>
+                <field name="usage_limit"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'active'"
+                       decoration-warning="status == 'scheduled'"
+                       decoration-muted="status == 'expired'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_discount_search" model="ir.ui.view">
+        <field name="name">shopify.discount.search</field>
+        <field name="model">shopify.discount</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="code"/>
+                <field name="instance_id"/>
+                <filter string="Code Discounts" name="code_type" domain="[('discount_type','=','code')]"/>
+                <filter string="Automatic" name="auto_type" domain="[('discount_type','=','automatic')]"/>
+                <filter string="Active" name="active" domain="[('status','=','active')]"/>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_discount" model="ir.actions.act_window">
+        <field name="name">Discounts</field>
+        <field name="res_model">shopify.discount</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Create your first discount</p>
+        <p>Build discount codes &amp; price rules here, then push them to Shopify.</p>
+    </field>
+    </record>
+</odoo>

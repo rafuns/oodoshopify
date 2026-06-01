@@ -1,0 +1,74 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_margin_pivot" model="ir.ui.view">
+        <field name="name">shopify.margin.pivot</field>
+        <field name="model">shopify.order.line</field>
+        <field name="arch" type="xml">
+            <pivot string="Profit Margin" sample="1">
+                <field name="instance_id" type="row"/>
+                <field name="margin_revenue" type="measure"/>
+                <field name="margin_cost" type="measure"/>
+                <field name="margin_value" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_shopify_margin_graph" model="ir.ui.view">
+        <field name="name">shopify.margin.graph</field>
+        <field name="model">shopify.order.line</field>
+        <field name="arch" type="xml">
+            <graph string="Profit Margin" type="bar" sample="1">
+                <field name="order_date" interval="month"/>
+                <field name="margin_value" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_shopify_margin_list" model="ir.ui.view">
+        <field name="name">shopify.margin.list</field>
+        <field name="model">shopify.order.line</field>
+        <field name="arch" type="xml">
+            <list string="Profit Margin" create="false"
+                  decoration-danger="margin_value &lt; 0">
+                <field name="order_id"/>
+                <field name="instance_id"/>
+                <field name="product_name"/>
+                <field name="quantity"/>
+                <field name="margin_revenue" sum="Revenue"/>
+                <field name="margin_cost" sum="COGS"/>
+                <field name="margin_value" sum="Margin"/>
+                <field name="margin_pct" avg="Avg %" widget="percentage" optional="show"/>
+                <field name="order_date" optional="hide"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_margin_search" model="ir.ui.view">
+        <field name="name">shopify.margin.search</field>
+        <field name="model">shopify.order.line</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_name"/>
+                <field name="instance_id"/>
+                <filter string="Losing Money" name="negative" domain="[('margin_value', '&lt;', 0)]"/>
+                <group>
+                    <filter string="Store" name="by_store" context="{'group_by': 'instance_id'}"/>
+                    <filter string="Product" name="by_product" context="{'group_by': 'product_name'}"/>
+                    <filter string="Order Month" name="by_month" context="{'group_by': 'order_date:month'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_margin" model="ir.actions.act_window">
+        <field name="name">Profit Margin</field>
+        <field name="res_model">shopify.order.line</field>
+        <field name="view_mode">pivot,graph,list</field>
+        <field name="search_view_id" ref="view_shopify_margin_search"/>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No order data yet</p>
+            <p>Real profit per order, product and store — Shopify revenue minus Odoo
+               cost (COGS). Use the <b>Losing Money</b> filter to find SKUs sold below cost.</p>
+        </field>
+    </record>
+</odoo>

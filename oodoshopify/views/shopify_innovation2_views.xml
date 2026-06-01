@@ -1,0 +1,182 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ══════════ Dynamic Repricing ══════════ -->
+    <record id="view_shopify_repricing_form" model="ir.ui.view">
+        <field name="name">shopify.repricing.rule.form</field>
+        <field name="model">shopify.repricing.rule</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="apply" string="Run Now" type="object" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="trigger"/>
+                            <field name="threshold"/>
+                            <field name="active"/>
+                        </group>
+                        <group>
+                            <field name="adjustment_type"/>
+                            <field name="adjustment_value"/>
+                            <field name="min_margin_pct"/>
+                            <field name="last_run"/>
+                            <field name="last_count"/>
+                        </group>
+                    </group>
+                    <group string="Products (empty = all)">
+                        <field name="product_ids" nolabel="1" widget="many2many_tags"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_repricing_list" model="ir.ui.view">
+        <field name="name">shopify.repricing.rule.list</field>
+        <field name="model">shopify.repricing.rule</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="sequence" widget="handle"/>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="trigger"/>
+                <field name="threshold"/>
+                <field name="adjustment_value"/>
+                <field name="last_count"/>
+                <field name="active" widget="boolean_toggle"/>
+                <button name="apply" string="Run" type="object" icon="fa-play"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_repricing" model="ir.actions.act_window">
+        <field name="name">Dynamic Repricing</field>
+        <field name="res_model">shopify.repricing.rule</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Create your first repricing rule</p>
+            <p>Automatically mark prices up when stock is scarce, or down to clear
+               overstock — never below your margin floor.</p>
+        </field>
+    </record>
+
+    <!-- ══════════ Replenishment ══════════ -->
+    <record id="view_shopify_replenishment_list" model="ir.ui.view">
+        <field name="name">shopify.replenishment.list</field>
+        <field name="model">shopify.replenishment</field>
+        <field name="arch" type="xml">
+            <list create="false" decoration-danger="state == 'urgent'"
+                  decoration-warning="state == 'reorder'">
+                <field name="odoo_product_id"/>
+                <field name="instance_id"/>
+                <field name="avg_daily_sales"/>
+                <field name="qty_available"/>
+                <field name="days_cover"/>
+                <field name="suggested_qty"/>
+                <field name="state" widget="badge"
+                       decoration-danger="state == 'urgent'"
+                       decoration-warning="state == 'reorder'"
+                       decoration-success="state == 'ok'"/>
+                <button name="action_create_orderpoint" string="Reordering Rule"
+                        type="object" icon="fa-refresh"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_replenishment" model="ir.actions.act_window">
+        <field name="name">Replenishment</field>
+        <field name="res_model">shopify.replenishment</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_group_state': 0}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No suggestions yet</p>
+            <p>Run a scan to forecast demand from Shopify sell-through and get
+               suggested reorder quantities. Create Odoo reordering rules in one click.</p>
+        </field>
+    </record>
+    <record id="action_server_scan_replenishment" model="ir.actions.server">
+        <field name="name">Scan Replenishment</field>
+        <field name="model_id" ref="model_shopify_replenishment"/>
+        <field name="state">code</field>
+        <field name="code">
+for inst in env['shopify.instance'].search([('state', '=', 'connected')]):
+    env['shopify.replenishment'].scan_instance(inst)
+action = {'type': 'ir.actions.act_window', 'res_model': 'shopify.replenishment',
+          'view_mode': 'list', 'views': [[False, 'list']], 'name': 'Replenishment'}
+        </field>
+    </record>
+
+    <!-- ══════════ Metaobjects ══════════ -->
+    <record id="view_shopify_metaobject_form" model="ir.ui.view">
+        <field name="name">shopify.metaobject.form</field>
+        <field name="model">shopify.metaobject</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify" type="object"/>
+                </header>
+                <sheet>
+                    <group>
+                        <field name="instance_id"/>
+                        <field name="object_type"/>
+                        <field name="handle"/>
+                        <field name="display_name"/>
+                        <field name="shopify_gid" readonly="1"/>
+                    </group>
+                    <separator string="Fields (JSON)"/>
+                    <field name="fields_json" widget="text"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_metaobject_list" model="ir.ui.view">
+        <field name="name">shopify.metaobject.list</field>
+        <field name="model">shopify.metaobject</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="object_type"/>
+                <field name="handle"/>
+                <field name="display_name"/>
+                <field name="instance_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_metaobject" model="ir.actions.act_window">
+        <field name="name">Metaobjects</field>
+        <field name="res_model">shopify.metaobject</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No metaobjects yet</p>
+            <p>Shopify metaobjects are custom structured content (size charts, specs…).
+               Use the server action to import them, edit the JSON, and push back.</p>
+        </field>
+    </record>
+    <record id="action_server_import_metaobjects" model="ir.actions.server">
+        <field name="name">Import Metaobjects</field>
+        <field name="model_id" ref="model_shopify_metaobject"/>
+        <field name="state">code</field>
+        <field name="code">
+total = 0
+for inst in env['shopify.instance'].search([('state', '=', 'connected')]):
+    total += env['shopify.metaobject'].import_from_shopify(inst)
+action = {'type': 'ir.actions.client', 'tag': 'display_notification',
+          'params': {'title': 'Metaobjects', 'message': '%d imported.' % total, 'type': 'success'}}
+        </field>
+    </record>
+
+    <!-- Bulk: generate metafields from field mappings -->
+    <record id="action_bulk_generate_metafields" model="ir.actions.server">
+        <field name="name">Generate Metafields from Mappings</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="binding_model_id" ref="model_shopify_product"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+n = env['shopify.metafield.mapping'].generate_metafields(records)
+action = {'type': 'ir.actions.client', 'tag': 'display_notification',
+          'params': {'title': 'Field Mapping',
+                     'message': '%d metafield(s) generated. Push from the Metafields tab.' % n,
+                     'type': 'success'}}
+        </field>
+    </record>
+</odoo>

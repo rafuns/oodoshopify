@@ -1,0 +1,133 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ── Collection Form ── -->
+    <record id="view_shopify_collection_form" model="ir.ui.view">
+        <field name="name">shopify.collection.form</field>
+        <field name="model">shopify.collection</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary"/>
+                    <button name="action_sync_products_to_shopify" string="Sync Products to Shopify"
+                            type="object"
+                            invisible="collection_type == 'smart' or not shopify_collection_gid"/>
+                    <button name="action_delete_from_shopify" string="Delete from Shopify"
+                            type="object" class="btn-danger"
+                            invisible="not shopify_collection_gid"
+                            confirm="This will permanently delete the collection on Shopify. Continue?"/>
+                    <field name="sync_status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="Collection Title"/></h1>
+                        <div class="text-muted" invisible="not handle">
+                            Handle: <field name="handle" readonly="1"/>
+                        </div>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="collection_type" widget="radio"/>
+                            <field name="shopify_collection_id" readonly="1"/>
+                            <field name="products_count" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="image_url" widget="url" string="Cover Image URL"/>
+                            <field name="updated_at" readonly="1"/>
+                        </group>
+                    </group>
+
+                    <group string="Description">
+                        <field name="description" nolabel="1" widget="html"/>
+                    </group>
+
+                    <notebook>
+                        <!-- Smart collection rules -->
+                        <page string="Rules" invisible="collection_type != 'smart'">
+                            <group>
+                                <field name="apply_disjunctively"
+                                       string="Match ANY rule (OR — uncheck for AND)"/>
+                            </group>
+                            <field name="rule_ids">
+                                <list editable="bottom">
+                                    <field name="column"/>
+                                    <field name="relation"/>
+                                    <field name="condition" placeholder="e.g. Summer"/>
+                                </list>
+                            </field>
+                        </page>
+
+                        <!-- Manual product list (custom collections) -->
+                        <page string="Products" invisible="collection_type != 'custom'">
+                            <field name="shopify_product_ids" widget="many2many_tags"
+                                   domain="[('instance_id', '=', instance_id)]"/>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <!-- ── Collection List ── -->
+    <record id="view_shopify_collection_list" model="ir.ui.view">
+        <field name="name">shopify.collection.list</field>
+        <field name="model">shopify.collection</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="collection_type" widget="badge"
+                       decoration-info="collection_type == 'smart'"
+                       decoration-success="collection_type == 'custom'"/>
+                <field name="handle"/>
+                <field name="products_count"/>
+                <field name="sync_status" widget="badge"
+                       decoration-success="sync_status == 'synced'"
+                       decoration-warning="sync_status == 'draft'"
+                       decoration-danger="sync_status == 'error'"/>
+                <field name="updated_at" optional="show"/>
+                <button name="action_push_to_shopify" string="Push" type="object" icon="fa-upload"
+                        invisible="sync_status == 'synced'"/>
+                <button name="action_sync_products_to_shopify" string="Sync Products"
+                        type="object" icon="fa-cubes"
+                        invisible="collection_type == 'smart' or not shopify_collection_id"/>
+            </list>
+        </field>
+    </record>
+
+    <!-- ── Search ── -->
+    <record id="view_shopify_collection_search" model="ir.ui.view">
+        <field name="name">shopify.collection.search</field>
+        <field name="model">shopify.collection</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <filter string="Custom" name="custom"
+                        domain="[('collection_type','=','custom')]"/>
+                <filter string="Smart" name="smart"
+                        domain="[('collection_type','=','smart')]"/>
+                <filter string="Not Synced" name="not_synced"
+                        domain="[('sync_status','=','draft')]"/>
+                <group>
+                    <filter string="Store" name="by_store"
+                            context="{'group_by':'instance_id'}"/>
+                    <filter string="Type"  name="by_type"
+                            context="{'group_by':'collection_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_collection" model="ir.actions.act_window">
+        <field name="name">Shopify Collections</field>
+        <field name="res_model">shopify.collection</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Create your first collection</p>
+        <p>Collections group products together. Pull existing ones with <b>Sync → Sync Collections</b>, or click <b>New</b> to build one and push it to Shopify.</p>
+    </field>
+    </record>
+</odoo>

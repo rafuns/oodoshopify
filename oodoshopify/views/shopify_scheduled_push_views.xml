@@ -1,0 +1,103 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_scheduled_push_form" model="ir.ui.view">
+        <field name="name">shopify.scheduled.push.form</field>
+        <field name="model">shopify.scheduled.push</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_schedule" string="Schedule" type="object"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_run_now" string="Run Now" type="object"
+                            invisible="state not in ('draft', 'scheduled')"/>
+                    <button name="action_cancel" string="Cancel" type="object"
+                            invisible="state not in ('draft', 'scheduled')"/>
+                    <button name="action_reset_draft" string="Reset to Draft" type="object"
+                            invisible="state in ('draft', 'scheduled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,scheduled,done"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Black Friday price drop"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="operation"/>
+                            <field name="scheduled_date"/>
+                        </group>
+                        <group>
+                            <field name="executed_date" invisible="state == 'draft'"/>
+                            <field name="is_product_op" invisible="1"/>
+                        </group>
+                    </group>
+                    <group string="Target Products" invisible="not is_product_op">
+                        <field name="product_ids" nolabel="1" widget="many2many_tags"
+                               placeholder="Leave empty for ALL products of the store"/>
+                    </group>
+                    <group string="Theme" invisible="operation != 'push_theme'">
+                        <field name="theme_id"/>
+                    </group>
+                    <group string="Result" invisible="not result_message">
+                        <field name="result_message" nolabel="1" readonly="1"/>
+                    </group>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_scheduled_push_list" model="ir.ui.view">
+        <field name="name">shopify.scheduled.push.list</field>
+        <field name="model">shopify.scheduled.push</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'scheduled'"
+                  decoration-success="state == 'done'"
+                  decoration-danger="state == 'failed'"
+                  decoration-muted="state == 'cancelled'">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="operation"/>
+                <field name="scheduled_date"/>
+                <field name="executed_date" optional="show"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'scheduled'"
+                       decoration-success="state == 'done'"
+                       decoration-danger="state == 'failed'"/>
+                <button name="action_run_now" string="Run Now" type="object"
+                        icon="fa-play" invisible="state not in ('draft','scheduled')"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_scheduled_push_search" model="ir.ui.view">
+        <field name="name">shopify.scheduled.push.search</field>
+        <field name="model">shopify.scheduled.push</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <filter string="Scheduled" name="scheduled" domain="[('state', '=', 'scheduled')]"/>
+                <filter string="Done" name="done" domain="[('state', '=', 'done')]"/>
+                <filter string="Failed" name="failed" domain="[('state', '=', 'failed')]"/>
+                <group>
+                    <filter string="Operation" name="by_op" context="{'group_by': 'operation'}"/>
+                    <filter string="Status" name="by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_scheduled_push" model="ir.actions.act_window">
+        <field name="name">Scheduled Pushes</field>
+        <field name="res_model">shopify.scheduled.push</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Schedule your first push</p>
+            <p>Prepare a change in Odoo (new prices, metafields, theme settings…),
+               pick a go-live time, and Shopify gets updated automatically then —
+               perfect for timed sales and coordinated launches.</p>
+        </field>
+    </record>
+</odoo>

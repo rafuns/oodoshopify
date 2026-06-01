@@ -1,0 +1,142 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_order_form" model="ir.ui.view">
+        <field name="name">shopify.order.form</field>
+        <field name="model">shopify.order</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_create_sale_order" string="Create Sale Order" type="object"
+                            class="btn-primary"
+                            invisible="odoo_sale_order_id"/>
+                    <button name="action_push_tracking_to_shopify" string="Push Tracking" type="object"
+                            invisible="not odoo_sale_order_id"/>
+                    <button name="action_mark_as_paid_on_shopify" string="Mark as Paid" type="object"
+                            invisible="financial_status == 'paid'"/>
+                    <button name="action_fetch_metafields" string="Fetch Metafields" type="object"/>
+                    <button name="action_push_tags_and_note" string="Push Tags &amp; Note" type="object"/>
+                    <button name="action_assess_risk_ai" string="Assess Risk (AI)" type="object"
+                            icon="fa-shield"/>
+                    <button name="action_mark_ready_for_pickup" string="Ready for Pickup"
+                            type="object" class="btn-primary"
+                            invisible="not is_pickup_order or pickup_status != 'pending'"/>
+                    <button name="action_mark_picked_up" string="Mark Picked Up"
+                            type="object"
+                            invisible="not is_pickup_order or pickup_status != 'ready'"/>
+                    <button name="action_open_cancel_wizard" string="Cancel on Shopify" type="object"
+                            class="btn-danger"
+                            invisible="financial_status in ('voided', 'refunded')"/>
+                    <button string="View on Shopify" type="url" url="shopify_admin_url"
+                            invisible="not shopify_admin_url" icon="fa-external-link"/>
+                    <field name="financial_status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="name"/>
+                            <field name="instance_id"/>
+                            <field name="shopify_order_id"/>
+                            <field name="odoo_sale_order_id"/>
+                            <field name="shopify_order_date"/>
+                            <field name="is_pickup_order" invisible="not is_pickup_order"/>
+                            <field name="pickup_location_name" invisible="not is_pickup_order"/>
+                            <field name="pickup_status" widget="badge"
+                                   invisible="not is_pickup_order"
+                                   decoration-success="pickup_status == 'picked_up'"
+                                   decoration-warning="pickup_status == 'ready'"
+                                   decoration-muted="pickup_status == 'pending'"/>
+                        </group>
+                        <group>
+                            <field name="customer_email"/>
+                            <field name="financial_status"/>
+                            <field name="fulfillment_status"/>
+                            <field name="risk_level" widget="badge"
+                                   decoration-danger="risk_level == 'high'"
+                                   decoration-warning="risk_level == 'medium'"
+                                   decoration-success="risk_level == 'low'"/>
+                            <field name="risk_score"/>
+                            <field name="risk_recommendation" invisible="not risk_recommendation"/>
+                            <field name="total_price"/>
+                            <field name="tip_amount" invisible="not tip_amount"/>
+                            <field name="duties_total" invisible="not duties_total"/>
+                            <field name="currency"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Order Lines">
+                            <field name="line_ids">
+                                <list>
+                                    <field name="product_name"/>
+                                    <field name="variant_title"/>
+                                    <field name="sku"/>
+                                    <field name="quantity"/>
+                                    <field name="price"/>
+                                    <field name="total_discount"/>
+                                    <field name="odoo_product_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Tags &amp; Note">
+                            <group>
+                                <field name="order_tags" placeholder="vip, wholesale, gift"/>
+                                <field name="order_note" placeholder="Internal order note"/>
+                            </group>
+                        </page>
+                        <page string="Metafields">
+                            <field name="metafield_ids">
+                                <list editable="bottom" decoration-warning="is_modified">
+                                    <field name="namespace"/>
+                                    <field name="key"/>
+                                    <field name="value"/>
+                                    <field name="value_type"/>
+                                    <field name="is_modified" widget="boolean"/>
+                                    <field name="mapped_odoo_field" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_order_list" model="ir.ui.view">
+        <field name="name">shopify.order.list</field>
+        <field name="model">shopify.order</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="shopify_order_date"/>
+                <field name="customer_email"/>
+                <field name="total_price"/>
+                <field name="currency"/>
+                <field name="financial_status" widget="badge"
+                       decoration-success="financial_status == 'paid'"
+                       decoration-warning="financial_status in ('pending','authorized')"
+                       decoration-danger="financial_status in ('voided','refunded')"/>
+                <field name="fulfillment_status" widget="badge"
+                       decoration-success="fulfillment_status == 'fulfilled'"
+                       decoration-warning="fulfillment_status == 'partial'"
+                       decoration-muted="fulfillment_status == 'unfulfilled'"/>
+                <field name="odoo_sale_order_id"/>
+                <field name="source_name" optional="show"/>
+                <field name="shipping_total" optional="hide"/>
+                <field name="risk_level" widget="badge"
+                       decoration-danger="risk_level == 'high'"
+                       decoration-warning="risk_level == 'medium'"
+                       optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_order" model="ir.actions.act_window">
+        <field name="name">Shopify Orders</field>
+        <field name="res_model">shopify.order</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No orders yet</p>
+        <p>Run <b>Sync → Sync Orders</b> to import your Shopify orders as Odoo sale orders.</p>
+    </field>
+    </record>
+</odoo>

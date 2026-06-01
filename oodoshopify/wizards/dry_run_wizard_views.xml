@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_dry_run_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.dry.run.wizard.form</field>
+        <field name="model">shopify.dry.run.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Preview Price Changes">
+                <div class="alert alert-info" role="status">
+                    <field name="change_count"/> price change(s) would be pushed to Shopify.
+                    Review below, then Apply.
+                </div>
+                <field name="line_ids" readonly="1">
+                    <list decoration-warning="will_change" decoration-muted="not will_change">
+                        <field name="product_name"/>
+                        <field name="variant_name"/>
+                        <field name="current_price"/>
+                        <field name="new_price"/>
+                        <field name="delta"/>
+                        <field name="will_change" string="Changes" widget="boolean"/>
+                    </list>
+                </field>
+                <footer>
+                    <button name="action_apply" string="Apply &amp; Push" type="object"
+                            class="btn-primary" invisible="change_count == 0"
+                            confirm="Push these price changes to Shopify now?"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_bulk_dry_run" model="ir.actions.server">
+        <field name="name">Preview Price Push (Dry-Run)</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="binding_model_id" ref="model_shopify_product"/>
+        <field name="binding_view_types">list</field>
+        <field name="state">code</field>
+        <field name="code">
+action = {
+    'type': 'ir.actions.act_window',
+    'res_model': 'shopify.dry.run.wizard',
+    'view_mode': 'form',
+    'target': 'new',
+    'context': {'active_ids': records.ids},
+}
+        </field>
+    </record>
+</odoo>

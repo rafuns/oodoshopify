@@ -1,0 +1,95 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_workflow_form" model="ir.ui.view">
+        <field name="name">shopify.workflow.form</field>
+        <field name="model">shopify.workflow</field>
+        <field name="arch" type="xml">
+            <form string="Order Workflow">
+                <sheet>
+                    <div class="oe_title">
+                        <h1>Order Workflow — <field name="instance_id"/></h1>
+                    </div>
+                    <group string="Order Confirmation">
+                        <field name="auto_confirm_order"/>
+                        <field name="picking_policy"/>
+                    </group>
+                    <group string="Fulfillment">
+                        <field name="auto_create_delivery"/>
+                    </group>
+                    <group string="Invoicing">
+                        <field name="auto_create_invoice"/>
+                        <field name="invoice_date_is_order_date" invisible="not auto_create_invoice"/>
+                    </group>
+                    <group string="Payment">
+                        <field name="auto_register_payment" invisible="not auto_create_invoice"/>
+                        <field name="payment_journal_id"
+                               invisible="not auto_register_payment"
+                               required="auto_register_payment"/>
+                        <field name="auto_mark_paid"
+                               help="When the linked Odoo invoice is fully paid, push 'Mark as Paid' to Shopify (checked hourly)."/>
+                    </group>
+                    <group string="Taxes">
+                        <field name="tax_handling"/>
+                        <field name="fiscal_position_id"
+                               invisible="tax_handling != 'fiscal'"/>
+                    </group>
+                    <group string="Email Notifications">
+                        <field name="suppress_shopify_emails"
+                               help="When on, Odoo sends all emails — Shopify's own notifications are suppressed."/>
+                    </group>
+                    <notebook>
+                        <page string="Customer Emails">
+                            <group>
+                                <group>
+                                    <field name="send_order_confirmation"/>
+                                    <field name="send_shipping_notification"/>
+                                    <field name="send_cancellation_email"/>
+                                </group>
+                                <group>
+                                    <field name="send_refund_email"/>
+                                    <field name="send_pickup_ready_email"/>
+                                    <field name="send_abandoned_checkout_email"/>
+                                </group>
+                            </group>
+                        </page>
+                        <page string="Internal Alerts">
+                            <group>
+                                <field name="send_low_stock_alert"/>
+                                <field name="low_stock_threshold" invisible="not send_low_stock_alert"/>
+                                <field name="low_stock_notify_user_ids" widget="many2many_tags"
+                                       invisible="not send_low_stock_alert"/>
+                            </group>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_workflow_list" model="ir.ui.view">
+        <field name="name">shopify.workflow.list</field>
+        <field name="model">shopify.workflow</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="instance_id"/>
+                <field name="auto_confirm_order" widget="boolean"/>
+                <field name="auto_create_delivery" widget="boolean"/>
+                <field name="auto_create_invoice" widget="boolean"/>
+                <field name="auto_register_payment" widget="boolean"/>
+                <field name="auto_mark_paid" widget="boolean"/>
+                <field name="tax_handling"/>
+                <field name="payment_journal_id"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_workflow" model="ir.actions.act_window">
+        <field name="name">Order Workflows</field>
+        <field name="res_model">shopify.workflow</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Create your first order workflow</p>
+        <p>Workflows automate confirm / invoice / delivery for imported orders. Add one per store.</p>
+    </field>
+    </record>
+</odoo>

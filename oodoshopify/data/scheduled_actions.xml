@@ -1,0 +1,192 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="cron_import_orders" model="ir.cron">
+        <field name="name">Shopify: Import Orders</field>
+        <field name="model_id" ref="model_shopify_order"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_import_orders()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_push_prices" model="ir.cron">
+        <field name="name">Shopify: Push Prices</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_push_prices()</field>
+        <field name="interval_number">6</field>
+        <field name="interval_type">hours</field>
+        <field name="active">False</field>
+    </record>
+
+    <record id="cron_import_customers" model="ir.cron">
+        <field name="name">Shopify: Import Customers</field>
+        <field name="model_id" ref="model_shopify_customer"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_import_customers()</field>
+        <field name="interval_number">12</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_process_queue" model="ir.cron">
+        <field name="name">Shopify: Process Sync Queue</field>
+        <field name="model_id" ref="model_shopify_queue"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_process_queue()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_import_inventory_levels" model="ir.cron">
+        <field name="name">Shopify: Import Inventory Levels</field>
+        <field name="model_id" ref="model_shopify_location"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_import_inventory_levels()</field>
+        <field name="interval_number">4</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_send_scheduled_reports" model="ir.cron">
+        <field name="name">Shopify: Send Scheduled Reports</field>
+        <field name="model_id" ref="model_shopify_scheduled_report"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_send_scheduled_reports()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_poll_bulk_operations" model="ir.cron">
+        <field name="name">Shopify: Poll Bulk Operations</field>
+        <field name="model_id" ref="model_shopify_bulk_operation"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_poll_bulk_operations()</field>
+        <field name="interval_number">5</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_check_low_stock" model="ir.cron">
+        <field name="name">Shopify: Check Low Stock Alerts</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_check_low_stock()</field>
+        <field name="interval_number">4</field>
+        <field name="interval_type">hours</field>
+        <field name="active">False</field>
+    </record>
+
+    <record id="cron_sync_collections" model="ir.cron">
+        <field name="name">Shopify: Sync Collections</field>
+        <field name="model_id" ref="model_shopify_collection"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_sync_collections()</field>
+        <field name="interval_number">12</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_auto_mark_paid" model="ir.cron">
+        <field name="name">Shopify: Auto Mark Paid</field>
+        <field name="model_id" ref="model_shopify_order"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_auto_mark_paid()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_import_payouts" model="ir.cron">
+        <field name="name">Shopify: Import Payouts</field>
+        <field name="model_id" ref="model_shopify_payout"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_import_payouts()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_import_abandoned_checkouts" model="ir.cron">
+        <field name="name">Shopify: Import Abandoned Checkouts</field>
+        <field name="model_id" ref="model_shopify_abandoned_checkout"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_import_abandoned_checkouts()</field>
+        <field name="interval_number">6</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_check_recovered_checkouts" model="ir.cron">
+        <field name="name">Shopify: Check Recovered Checkouts → Win Leads</field>
+        <field name="model_id" ref="model_shopify_abandoned_checkout"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_check_recovered_checkouts()</field>
+        <field name="interval_number">2</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_purge_logs" model="ir.cron">
+        <field name="name">Shopify: Purge Old Logs</field>
+        <field name="model_id" ref="model_shopify_log"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_purge_old_logs()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_run_scheduled_pushes" model="ir.cron">
+        <field name="name">Shopify: Run Scheduled Pushes</field>
+        <field name="model_id" ref="model_shopify_scheduled_push"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_run_due()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_run_scheduled_sales" model="ir.cron">
+        <field name="name">Shopify: Run Scheduled Sales</field>
+        <field name="model_id" ref="model_shopify_scheduled_sale"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_run_due()</field>
+        <field name="interval_number">15</field>
+        <field name="interval_type">minutes</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_scan_drift" model="ir.cron">
+        <field name="name">Shopify: Scan for Sync Drift</field>
+        <field name="model_id" ref="model_shopify_drift"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_scan_drift()</field>
+        <field name="interval_number">12</field>
+        <field name="interval_type">hours</field>
+        <field name="active">True</field>
+    </record>
+
+    <record id="cron_apply_repricing" model="ir.cron">
+        <field name="name">Shopify: Apply Dynamic Repricing</field>
+        <field name="model_id" ref="model_shopify_repricing_rule"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_apply_repricing()</field>
+        <field name="interval_number">6</field>
+        <field name="interval_type">hours</field>
+        <field name="active">False</field>
+    </record>
+
+    <record id="cron_scan_replenishment" model="ir.cron">
+        <field name="name">Shopify: Scan Replenishment</field>
+        <field name="model_id" ref="model_shopify_replenishment"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_scan_replenishment()</field>
+        <field name="interval_number">1</field>
+        <field name="interval_type">days</field>
+        <field name="active">False</field>
+    </record>
+</odoo>

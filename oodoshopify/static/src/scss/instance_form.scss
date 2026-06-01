@@ -1,0 +1,15 @@
+// Widen the Shopify Instance form when it opens inside a dialog/modal
+// (e.g. "create & edit" from the Setup Wizard). Scoped via :has() so it
+// only affects dialogs that contain our instance form.
+.modal-dialog:has(.o_shopify_instance_form) {
+    max-width: 1100px;
+    width: 90%;
+}
+
+// Give the connection / settings inputs a comfortable minimum width so they
+// don't collapse into a thin column.
+.o_shopify_instance_form {
+    .o_group .o_field_widget {
+        min-width: 180px;
+    }
+}

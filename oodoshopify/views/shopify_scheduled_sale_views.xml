@@ -1,0 +1,109 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_scheduled_sale_form" model="ir.ui.view">
+        <field name="name">shopify.scheduled.sale.form</field>
+        <field name="model">shopify.scheduled.sale</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_schedule" string="Schedule" type="object"
+                            class="btn-primary" invisible="state != 'draft'"/>
+                    <button name="action_activate_now" string="Start Now" type="object"
+                            invisible="state not in ('draft', 'scheduled')"/>
+                    <button name="action_end_now" string="End Now" type="object"
+                            invisible="state != 'active'"/>
+                    <button name="action_cancel" string="Cancel" type="object"
+                            invisible="state in ('ended', 'cancelled')"/>
+                    <field name="state" widget="statusbar"
+                           statusbar_visible="draft,scheduled,active,ended"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name" placeholder="e.g. Black Friday 20% off"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="discount_type"/>
+                            <field name="discount_value"/>
+                        </group>
+                        <group>
+                            <field name="start_date"/>
+                            <field name="end_date"/>
+                        </group>
+                    </group>
+                    <group string="Products on Sale">
+                        <field name="product_ids" nolabel="1" widget="many2many_tags"/>
+                    </group>
+                    <group string="Result" invisible="not result_message">
+                        <field name="result_message" nolabel="1" readonly="1"/>
+                    </group>
+                    <notebook invisible="not line_ids">
+                        <page string="Price Snapshots">
+                            <field name="line_ids" readonly="1">
+                                <list>
+                                    <field name="variant_id"/>
+                                    <field name="original_price"/>
+                                    <field name="sale_price"/>
+                                    <field name="original_compare_at" optional="hide"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_scheduled_sale_list" model="ir.ui.view">
+        <field name="name">shopify.scheduled.sale.list</field>
+        <field name="model">shopify.scheduled.sale</field>
+        <field name="arch" type="xml">
+            <list decoration-info="state == 'scheduled'"
+                  decoration-success="state == 'active'"
+                  decoration-muted="state in ('ended','cancelled')"
+                  decoration-danger="state == 'failed'">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="discount_type"/>
+                <field name="discount_value"/>
+                <field name="start_date"/>
+                <field name="end_date"/>
+                <field name="state" widget="badge"
+                       decoration-info="state == 'scheduled'"
+                       decoration-success="state == 'active'"
+                       decoration-danger="state == 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_scheduled_sale_search" model="ir.ui.view">
+        <field name="name">shopify.scheduled.sale.search</field>
+        <field name="model">shopify.scheduled.sale</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <filter string="Scheduled" name="scheduled" domain="[('state', '=', 'scheduled')]"/>
+                <filter string="Active" name="active" domain="[('state', '=', 'active')]"/>
+                <filter string="Ended" name="ended" domain="[('state', '=', 'ended')]"/>
+                <group>
+                    <filter string="Status" name="by_state" context="{'group_by': 'state'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_scheduled_sale" model="ir.actions.act_window">
+        <field name="name">Scheduled Sales</field>
+        <field name="res_model">shopify.scheduled.sale</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">Plan your first timed sale</p>
+            <p>Pick products and a % or fixed discount, set start and (optionally)
+               end times. Prices drop automatically at the start — with the original
+               shown as a strikethrough on Shopify — and restore themselves when it ends.</p>
+        </field>
+    </record>
+</odoo>

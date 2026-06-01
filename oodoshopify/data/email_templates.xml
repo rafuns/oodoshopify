@@ -1,0 +1,304 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+
+    <!-- ─────────────────────────────────────────────────────────────────
+         1. Order Confirmation  (sent when Odoo sale order is created)
+         ───────────────────────────────────────────────────────────────── -->
+    <record id="email_template_order_confirmation" model="mail.template">
+        <field name="name">Shopify — Order Confirmation</field>
+        <field name="model_id" ref="model_shopify_order"/>
+        <field name="subject">Order Confirmed: ${object.name}</field>
+        <field name="email_to">${object.customer_email}</field>
+        <field name="lang">${object.odoo_sale_order_id.partner_id.lang}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  <div style="background:#1a7a6e;padding:24px;text-align:center">
+    <h1 style="color:#fff;margin:0;font-size:22px">Order Confirmed ✓</h1>
+  </div>
+  <div style="padding:32px">
+    <p>Hi there,</p>
+    <p>Thank you for your order! Here's a summary:</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr style="background:#f5f5f5">
+        <td style="padding:10px;font-weight:bold">Order #</td>
+        <td style="padding:10px">${object.name}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px;font-weight:bold">Date</td>
+        <td style="padding:10px">${object.shopify_order_date or ''}</td>
+      </tr>
+      <tr style="background:#f5f5f5">
+        <td style="padding:10px;font-weight:bold">Total</td>
+        <td style="padding:10px">${object.total_price} ${object.currency}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px;font-weight:bold">Status</td>
+        <td style="padding:10px">${object.financial_status or ''}</td>
+      </tr>
+    </table>
+    % if object.is_pickup_order:
+    <div style="background:#fff3cd;border-left:4px solid #ffc107;padding:12px;margin:16px 0">
+      <strong>Pickup Order</strong> — We'll notify you when your order is ready for
+      pickup at <strong>${object.pickup_location_name or 'our store'}</strong>.
+    </div>
+    % endif
+    <p style="color:#888;font-size:13px">
+      If you have any questions, reply to this email or contact us at
+      <a href="mailto:rafuns@gmail.com">rafuns@gmail.com</a>.
+    </p>
+  </div>
+  <div style="background:#f5f5f5;padding:16px;text-align:center;font-size:12px;color:#999">
+    Powered by Shopify · Odoo Connector
+  </div>
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────
+         2. Order Shipped  (sent when tracking is pushed to Shopify)
+         ───────────────────────────────────────────────────────────────── -->
+    <record id="email_template_order_shipped" model="mail.template">
+        <field name="name">Shopify — Order Shipped</field>
+        <field name="model_id" ref="model_shopify_order"/>
+        <field name="subject">Your order ${object.name} has shipped!</field>
+        <field name="email_to">${object.customer_email}</field>
+        <field name="lang">${object.odoo_sale_order_id.partner_id.lang}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  <div style="background:#1a7a6e;padding:24px;text-align:center">
+    <h1 style="color:#fff;margin:0;font-size:22px">Your Order Is On Its Way 🚚</h1>
+  </div>
+  <div style="padding:32px">
+    <p>Great news! Order <strong>${object.name}</strong> has been shipped.</p>
+    % if object.odoo_sale_order_id:
+    <% pickings = object.odoo_sale_order_id.picking_ids.filtered(lambda p: p.state == 'done' and p.carrier_tracking_ref) %>
+    % if pickings:
+    <div style="background:#e8f5e9;border-left:4px solid #1a7a6e;padding:16px;margin:16px 0">
+      <strong>Tracking Information</strong><br/>
+      % for picking in pickings:
+      <p style="margin:6px 0">
+        Carrier: <strong>${picking.carrier_id.name if picking.carrier_id else 'N/A'}</strong><br/>
+        Tracking #: <strong>${picking.carrier_tracking_ref}</strong>
+      </p>
+      % endfor
+    </div>
+    % endif
+    % endif
+    <p style="color:#888;font-size:13px">
+      Questions? Contact us at
+      <a href="mailto:rafuns@gmail.com">rafuns@gmail.com</a>.
+    </p>
+  </div>
+  <div style="background:#f5f5f5;padding:16px;text-align:center;font-size:12px;color:#999">
+    Powered by Shopify · Odoo Connector
+  </div>
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────
+         3. Order Cancelled
+         ───────────────────────────────────────────────────────────────── -->
+    <record id="email_template_order_cancelled" model="mail.template">
+        <field name="name">Shopify — Order Cancelled</field>
+        <field name="model_id" ref="model_shopify_order"/>
+        <field name="subject">Your order ${object.name} has been cancelled</field>
+        <field name="email_to">${object.customer_email}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  <div style="background:#c0392b;padding:24px;text-align:center">
+    <h1 style="color:#fff;margin:0;font-size:22px">Order Cancelled</h1>
+  </div>
+  <div style="padding:32px">
+    <p>We're sorry to let you know that order <strong>${object.name}</strong>
+       (${object.total_price} ${object.currency}) has been cancelled.</p>
+    <p>If a refund is applicable, it will be processed within 3–5 business days
+       to your original payment method.</p>
+    <p>If you have any questions, please contact us at
+       <a href="mailto:rafuns@gmail.com">rafuns@gmail.com</a>.</p>
+  </div>
+  <div style="background:#f5f5f5;padding:16px;text-align:center;font-size:12px;color:#999">
+    Powered by Shopify · Odoo Connector
+  </div>
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────
+         4. Refund Processed
+         ───────────────────────────────────────────────────────────────── -->
+    <record id="email_template_refund_processed" model="mail.template">
+        <field name="name">Shopify — Refund Processed</field>
+        <field name="model_id" ref="model_shopify_refund"/>
+        <field name="subject">Refund processed for order ${object.shopify_order_id.name or ''}</field>
+        <field name="email_to">${object.shopify_order_id.customer_email if object.shopify_order_id else ''}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  <div style="background:#1a7a6e;padding:24px;text-align:center">
+    <h1 style="color:#fff;margin:0;font-size:22px">Refund Processed ✓</h1>
+  </div>
+  <div style="padding:32px">
+    <p>Your refund has been processed.</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr style="background:#f5f5f5">
+        <td style="padding:10px;font-weight:bold">Order #</td>
+        <td style="padding:10px">${object.shopify_order_id.name if object.shopify_order_id else ''}</td>
+      </tr>
+      <tr>
+        <td style="padding:10px;font-weight:bold">Refund Amount</td>
+        <td style="padding:10px">${object.total_refunded} ${object.currency}</td>
+      </tr>
+      % if object.note:
+      <tr style="background:#f5f5f5">
+        <td style="padding:10px;font-weight:bold">Reason</td>
+        <td style="padding:10px">${object.note}</td>
+      </tr>
+      % endif
+    </table>
+    <p>The refund will appear on your original payment method within 3–5 business days.</p>
+    <p style="color:#888;font-size:13px">
+      Questions? <a href="mailto:rafuns@gmail.com">rafuns@gmail.com</a>
+    </p>
+  </div>
+  <div style="background:#f5f5f5;padding:16px;text-align:center;font-size:12px;color:#999">
+    Powered by Shopify · Odoo Connector
+  </div>
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────
+         5. Pickup Ready  (customer notified their order is at the store)
+         ───────────────────────────────────────────────────────────────── -->
+    <record id="email_template_pickup_ready" model="mail.template">
+        <field name="name">Shopify — Order Ready for Pickup</field>
+        <field name="model_id" ref="model_shopify_order"/>
+        <field name="subject">Your order ${object.name} is ready for pickup!</field>
+        <field name="email_to">${object.customer_email}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  <div style="background:#1a7a6e;padding:24px;text-align:center">
+    <h1 style="color:#fff;margin:0;font-size:22px">Ready for Pickup 🏪</h1>
+  </div>
+  <div style="padding:32px">
+    <p>Your order <strong>${object.name}</strong> is ready and waiting for you!</p>
+    <div style="background:#e8f5e9;border-left:4px solid #1a7a6e;padding:16px;margin:16px 0">
+      <strong>Pickup Location:</strong><br/>
+      ${object.pickup_location_name or 'Our Store'}
+    </div>
+    <p>Please bring this email or your order number when you arrive.</p>
+    <p style="color:#888;font-size:13px">
+      Questions? <a href="mailto:rafuns@gmail.com">rafuns@gmail.com</a>
+    </p>
+  </div>
+  <div style="background:#f5f5f5;padding:16px;text-align:center;font-size:12px;color:#999">
+    Powered by Shopify · Odoo Connector
+  </div>
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────
+         6. Low Stock Alert  (internal — sent to configured users)
+         ───────────────────────────────────────────────────────────────── -->
+    <record id="email_template_low_stock_alert" model="mail.template">
+        <field name="name">Shopify — Low Stock Alert (Internal)</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="subject">⚠️ Low Stock Alert: ${object.name} on ${object.instance_id.name}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  <div style="background:#e67e22;padding:24px;text-align:center">
+    <h1 style="color:#fff;margin:0;font-size:22px">⚠️ Low Stock Alert</h1>
+  </div>
+  <div style="padding:32px">
+    <p>The following product has reached the low stock threshold on
+       <strong>${object.instance_id.name}</strong>:</p>
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr style="background:#f5f5f5">
+        <td style="padding:10px;font-weight:bold">Product</td>
+        <td style="padding:10px">${object.name}</td>
+      </tr>
+      % for variant in object.variant_ids:
+      <tr>
+        <td style="padding:8px 10px;color:#666">${variant.title or 'Default'} (${variant.sku or ''})</td>
+        <td style="padding:8px 10px;color:${'' if variant.inventory_quantity > 0 else 'red'}">
+          ${variant.inventory_quantity} in stock
+        </td>
+      </tr>
+      % endfor
+    </table>
+    % if object.shopify_admin_url:
+    <p><a href="${object.shopify_admin_url}" style="color:#1a7a6e">View on Shopify →</a></p>
+    % endif
+  </div>
+  <div style="background:#f5f5f5;padding:16px;text-align:center;font-size:12px;color:#999">
+    Shopify · Odoo Connector — Internal Alert
+  </div>
+</div>
+        ]]></field>
+    </record>
+
+    <!-- ─────────────────────────────────────────────────────────────────
+         7. Abandoned Checkout Recovery
+         ───────────────────────────────────────────────────────────────── -->
+    <record id="email_template_abandoned_checkout" model="mail.template">
+        <field name="name">Shopify — Abandoned Checkout Recovery</field>
+        <field name="model_id" ref="model_shopify_abandoned_checkout"/>
+        <field name="subject">You left something behind…</field>
+        <field name="email_to">${object.email}</field>
+        <field name="auto_delete" eval="True"/>
+        <field name="body_html"><![CDATA[
+<div style="font-family:Arial,sans-serif;max-width:600px;margin:0 auto;color:#333">
+  <div style="background:#1a7a6e;padding:24px;text-align:center">
+    <h1 style="color:#fff;margin:0;font-size:22px">Did you forget something? 🛒</h1>
+  </div>
+  <div style="padding:32px">
+    <p>Hi ${object.customer_name or 'there'},</p>
+    <p>You left some items in your cart. Come back and complete your order!</p>
+    % if object.line_ids:
+    <table style="width:100%;border-collapse:collapse;margin:16px 0">
+      <tr style="background:#1a7a6e;color:#fff">
+        <th style="padding:10px;text-align:left">Item</th>
+        <th style="padding:10px;text-align:right">Qty</th>
+        <th style="padding:10px;text-align:right">Price</th>
+      </tr>
+      % for line in object.line_ids:
+      <tr style="border-bottom:1px solid #eee">
+        <td style="padding:10px">${line.product_title}</td>
+        <td style="padding:10px;text-align:right">${line.quantity}</td>
+        <td style="padding:10px;text-align:right">${line.unit_price} ${object.currency}</td>
+      </tr>
+      % endfor
+      <tr style="font-weight:bold;background:#f5f5f5">
+        <td colspan="2" style="padding:10px">Total</td>
+        <td style="padding:10px;text-align:right">${object.total_price} ${object.currency}</td>
+      </tr>
+    </table>
+    % endif
+    % if object.checkout_url:
+    <div style="text-align:center;margin:24px 0">
+      <a href="${object.checkout_url}"
+         style="background:#1a7a6e;color:#fff;padding:14px 28px;text-decoration:none;border-radius:6px;font-weight:bold;font-size:16px">
+        Complete My Order →
+      </a>
+    </div>
+    % endif
+    <p style="color:#888;font-size:13px">
+      This link expires in 24 hours. Questions?
+      <a href="mailto:rafuns@gmail.com">rafuns@gmail.com</a>
+    </p>
+  </div>
+  <div style="background:#f5f5f5;padding:16px;text-align:center;font-size:12px;color:#999">
+    Powered by Shopify · Odoo Connector
+  </div>
+</div>
+        ]]></field>
+    </record>
+
+</odoo>

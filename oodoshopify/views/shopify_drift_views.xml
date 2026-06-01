@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_drift_list" model="ir.ui.view">
+        <field name="name">shopify.drift.list</field>
+        <field name="model">shopify.drift</field>
+        <field name="arch" type="xml">
+            <list decoration-warning="state == 'open'"
+                  decoration-success="state == 'resolved'"
+                  decoration-muted="state == 'ignored'"
+                  create="false">
+                <field name="instance_id"/>
+                <field name="shopify_product_id"/>
+                <field name="variant_id"/>
+                <field name="drift_type"/>
+                <field name="odoo_value"/>
+                <field name="shopify_value"/>
+                <field name="difference"/>
+                <field name="detected_date"/>
+                <field name="state" widget="badge"
+                       decoration-warning="state == 'open'"
+                       decoration-success="state == 'resolved'"/>
+                <button name="action_fix_push" string="Push" type="object"
+                        icon="fa-cloud-upload" invisible="state != 'open'"/>
+                <button name="action_fix_pull" string="Pull" type="object"
+                        icon="fa-cloud-download" invisible="state != 'open'"/>
+                <button name="action_ignore" string="Ignore" type="object"
+                        icon="fa-ban" invisible="state != 'open'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_drift_search" model="ir.ui.view">
+        <field name="name">shopify.drift.search</field>
+        <field name="model">shopify.drift</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="shopify_product_id"/>
+                <field name="instance_id"/>
+                <filter string="Open" name="open" domain="[('state', '=', 'open')]"/>
+                <filter string="Resolved" name="resolved" domain="[('state', '=', 'resolved')]"/>
+                <separator/>
+                <filter string="Price" name="price" domain="[('drift_type', '=', 'price')]"/>
+                <filter string="Inventory" name="inventory" domain="[('drift_type', '=', 'inventory')]"/>
+                <group>
+                    <filter string="Store" name="by_store" context="{'group_by': 'instance_id'}"/>
+                    <filter string="Field" name="by_type" context="{'group_by': 'drift_type'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_drift" model="ir.actions.act_window">
+        <field name="name">Sync Drift</field>
+        <field name="res_model">shopify.drift</field>
+        <field name="view_mode">list</field>
+        <field name="context">{'search_default_open': 1}</field>
+        <field name="help" type="html">
+            <p class="o_view_nocontent_smiling_face">No drift — Odoo and Shopify agree 🎉</p>
+            <p>This view flags products where Odoo and Shopify disagree on price or
+               stock (a change that didn't propagate). Each row offers a one-click
+               <b>Push</b> (Odoo wins) or <b>Pull</b> (Shopify wins) fix.</p>
+        </field>
+    </record>
+
+    <record id="action_server_scan_drift" model="ir.actions.server">
+        <field name="name">Scan for Drift</field>
+        <field name="model_id" ref="model_shopify_drift"/>
+        <field name="state">code</field>
+        <field name="code">
+instances = env['shopify.instance'].search([('state', '=', 'connected')])
+total = 0
+for inst in instances:
+    total += env['shopify.drift'].scan_instance(inst)
+action = {
+    'type': 'ir.actions.client',
+    'tag': 'display_notification',
+    'params': {
+        'title': 'Drift Scan',
+        'message': ('%d open drift(s) found across %d store(s).' % (total, len(instances)))
+                   if instances else 'No connected stores.',
+        'type': 'warning' if total else 'success',
+        'next': {'type': 'ir.actions.act_window', 'res_model': 'shopify.drift',
+                 'view_mode': 'list', 'views': [[False, 'list']],
+                 'context': {'search_default_open': 1}},
+    },
+}
+        </field>
+    </record>
+</odoo>

@@ -1,0 +1,40 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_log_list" model="ir.ui.view">
+        <field name="name">shopify.log.list</field>
+        <field name="model">shopify.log</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="create_date"/>
+                <field name="instance_id"/>
+                <field name="log_type" widget="badge"
+                       decoration-success="log_type == 'success'"
+                       decoration-info="log_type == 'info'"
+                       decoration-warning="log_type == 'warning'"
+                       decoration-danger="log_type == 'error'"/>
+                <field name="operation"/>
+                <field name="status_code"/>
+                <field name="message"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_log" model="ir.actions.act_window">
+        <field name="name">Activity Logs</field>
+        <field name="res_model">shopify.log</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No activity yet</p>
+        <p>Every sync action is logged here — handy for troubleshooting what happened and when.</p>
+    </field>
+    </record>
+
+    <record id="action_shopify_log_export" model="ir.actions.server">
+        <field name="name">Export Logs as CSV</field>
+        <field name="model_id" ref="model_shopify_log"/>
+        <field name="binding_model_id" ref="model_shopify_log"/>
+        <field name="binding_type">action</field>
+        <field name="state">code</field>
+        <field name="code">action = records.action_export_csv()</field>
+    </record>
+</odoo>

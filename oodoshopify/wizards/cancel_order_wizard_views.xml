@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_cancel_order_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.cancel.order.wizard.form</field>
+        <field name="model">shopify.cancel.order.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Cancel Shopify Order">
+                <group string="Order">
+                    <field name="order_name"    readonly="1"/>
+                    <field name="current_status" readonly="1" widget="badge"
+                           decoration-warning="current_status in ('pending','authorized')"
+                           decoration-success="current_status == 'paid'"/>
+                    <field name="total_price"   readonly="1"/>
+                    <field name="currency"      readonly="1"/>
+                </group>
+
+                <group string="Cancellation Options">
+                    <field name="reason"/>
+                    <field name="staff_note" placeholder="Internal note (not sent to customer)"/>
+                </group>
+
+                <group string="Actions">
+                    <group>
+                        <field name="refund"/>
+                        <field name="restock"/>
+                    </group>
+                    <group>
+                        <field name="notify_customer"/>
+                        <field name="cancel_odoo_order"
+                               invisible="not has_odoo_order"/>
+                        <field name="has_odoo_order" invisible="1"/>
+                    </group>
+                </group>
+
+                <div class="alert alert-warning" role="alert"
+                     invisible="not refund">
+                    <strong>Note:</strong> A refund will be issued automatically
+                    for the full order amount on Shopify.
+                </div>
+
+                <footer>
+                    <button name="action_confirm" string="Cancel Order on Shopify"
+                            type="object" class="btn-danger"/>
+                    <button string="Discard" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+</odoo>

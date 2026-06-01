@@ -1,0 +1,121 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_setup_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.setup.wizard.form</field>
+        <field name="model">shopify.setup.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Shopify Setup Wizard">
+                <sheet>
+                    <!-- Progress bar -->
+                    <div class="alert alert-info d-flex align-items-center gap-3 mb-3">
+                        <strong><field name="step_label" readonly="1" nolabel="1"/></strong>
+                        <div class="flex-grow-1">
+                            <field name="progress" widget="progressbar" nolabel="1"/>
+                        </div>
+                    </div>
+
+                    <!-- Step 1: Credentials -->
+                    <group invisible="step != 1" string="Store Credentials">
+                        <field name="instance_id" help="Select an existing instance to reconfigure, or leave empty to create new."/>
+                        <field name="instance_name" invisible="instance_id"/>
+                        <field name="shop_domain" placeholder="my-store.myshopify.com"/>
+                        <field name="api_key"/>
+                        <field name="api_secret" password="True"/>
+                    </group>
+
+                    <!-- Step 2: OAuth -->
+                    <group invisible="step != 2" string="Connect via OAuth">
+                        <div class="alert alert-warning" role="alert">
+                            Click the button below to be redirected to Shopify to authorize the connection.
+                            You will be returned here automatically.
+                        </div>
+                        <div>
+                            <button name="action_connect_oauth" string="Connect with Shopify OAuth"
+                                    type="object" class="btn-primary btn-lg"/>
+                        </div>
+                        <field name="oauth_done" widget="boolean" string="OAuth completed?"/>
+                    </group>
+
+                    <!-- Step 3: Test -->
+                    <group invisible="step != 3" string="Test Connection">
+                        <div class="mb-2">
+                            <button name="action_next" string="Run Connection Test"
+                                    type="object" class="btn-primary"/>
+                        </div>
+                        <field name="connection_status" readonly="1"/>
+                        <field name="shop_name_detected" readonly="1"/>
+                        <field name="currency_detected" readonly="1"/>
+                    </group>
+
+                    <!-- Step 4: Import settings -->
+                    <group invisible="step != 4" string="Data Import Settings">
+                        <group>
+                            <field name="import_products"/>
+                            <field name="import_customers"/>
+                            <field name="import_orders"/>
+                            <field name="import_days_back" invisible="not import_orders"/>
+                        </group>
+                        <group>
+                            <field name="new_product_status"/>
+                            <field name="fallback_customer_id"/>
+                        </group>
+                    </group>
+
+                    <!-- Step 5: Product matching -->
+                    <group invisible="step != 5" string="Product Matching &amp; Inventory">
+                        <field name="product_matching_strategy"/>
+                        <field name="inventory_qty_type"/>
+                    </group>
+
+                    <!-- Step 6: Webhooks -->
+                    <group invisible="step != 6" string="Register Webhooks">
+                        <div class="alert alert-info" role="alert">
+                            Webhooks enable real-time order, product, customer, and inventory updates.
+                            Click Next to register all 8 webhook topics on Shopify.
+                        </div>
+                        <field name="webhooks_registered" widget="boolean" readonly="1"/>
+                        <field name="webhook_count" readonly="1" invisible="not webhooks_registered"/>
+                    </group>
+
+                    <!-- Step 7: Workflow -->
+                    <group invisible="step != 7" string="Order Workflow Automation">
+                        <field name="auto_confirm_order"/>
+                        <field name="auto_create_invoice"/>
+                        <field name="auto_register_payment" invisible="not auto_create_invoice"/>
+                        <field name="auto_mark_paid"/>
+                    </group>
+
+                    <!-- Step 8: Summary -->
+                    <group invisible="step != 8" string="Review &amp; Go Live">
+                        <div class="alert alert-success" role="alert">
+                            <strong>Setup complete!</strong> Review the summary below then click Finish.
+                        </div>
+                        <field name="setup_summary" readonly="1" nolabel="1" widget="text"/>
+                        <field name="step" invisible="1"/>
+                    </group>
+
+                    <field name="step" invisible="1"/>
+                    <field name="total_steps" invisible="1"/>
+                </sheet>
+                <footer>
+                    <button name="action_back" string="← Back" type="object"
+                            class="btn-secondary" invisible="step == 1"/>
+                    <button name="action_next" type="object" class="btn-primary"
+                            invisible="step == 8"
+                            string="Next →"/>
+                    <button name="action_next" type="object" class="btn-success"
+                            invisible="step != 8"
+                            string="Finish &amp; Open Instance"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_shopify_setup_wizard" model="ir.actions.act_window">
+        <field name="name">Shopify Setup Wizard</field>
+        <field name="res_model">shopify.setup.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

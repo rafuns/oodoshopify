@@ -1,0 +1,307 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ══════════════ BLOGS ══════════════ -->
+    <record id="view_shopify_blog_form" model="ir.ui.view">
+        <field name="name">shopify.blog.form</field>
+        <field name="model">shopify.blog</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary" invisible="shopify_blog_gid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <field name="instance_id"/>
+                        <field name="handle" readonly="1"/>
+                    </group>
+                    <notebook>
+                        <page string="Articles">
+                            <field name="article_ids">
+                                <list>
+                                    <field name="name"/>
+                                    <field name="author_name"/>
+                                    <field name="is_published" widget="boolean"/>
+                                    <field name="published_at"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_blog_list" model="ir.ui.view">
+        <field name="name">shopify.blog.list</field>
+        <field name="model">shopify.blog</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/><field name="instance_id"/><field name="handle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_blog" model="ir.actions.act_window">
+        <field name="name">Blogs</field>
+        <field name="res_model">shopify.blog</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Create your first blog</p>
+        <p>Manage Shopify blogs. Import existing ones, or click <b>New</b> to create one and push it.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ ARTICLES ══════════════ -->
+    <record id="view_shopify_article_form" model="ir.ui.view">
+        <field name="name">shopify.article.form</field>
+        <field name="model">shopify.article</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary" invisible="shopify_article_gid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="blog_id"/>
+                            <field name="author_name"/>
+                        </group>
+                        <group>
+                            <field name="is_published"/>
+                            <field name="published_at"/>
+                            <field name="handle" readonly="1"/>
+                        </group>
+                    </group>
+                    <field name="body_html" widget="html"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_article_list" model="ir.ui.view">
+        <field name="name">shopify.article.list</field>
+        <field name="model">shopify.article</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/><field name="blog_id"/><field name="author_name"/>
+                <field name="is_published" widget="boolean"/><field name="published_at"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_article" model="ir.actions.act_window">
+        <field name="name">Articles</field>
+        <field name="res_model">shopify.article</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Write your first article</p>
+        <p>Blog articles live here. Import them or write new ones and push to Shopify.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ PAGES ══════════════ -->
+    <record id="view_shopify_page_form" model="ir.ui.view">
+        <field name="name">shopify.page.form</field>
+        <field name="model">shopify.page</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary" invisible="shopify_page_gid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <field name="instance_id"/>
+                        <field name="is_published"/>
+                        <field name="handle" readonly="1"/>
+                    </group>
+                    <field name="body_html" widget="html"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_page_list" model="ir.ui.view">
+        <field name="name">shopify.page.list</field>
+        <field name="model">shopify.page</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/><field name="instance_id"/>
+                <field name="is_published" widget="boolean"/><field name="handle"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_page" model="ir.actions.act_window">
+        <field name="name">Pages</field>
+        <field name="res_model">shopify.page</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Create your first page</p>
+        <p>Shopify pages (About, FAQ…). Import existing pages or create &amp; push a new one.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ FILES ══════════════ -->
+    <record id="view_shopify_file_form" model="ir.ui.view">
+        <field name="name">shopify.file.form</field>
+        <field name="model">shopify.file</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_upload" string="Upload to Shopify"
+                            type="object" class="btn-primary" invisible="shopify_file_gid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <field name="instance_id"/>
+                        <field name="alt_text"/>
+                        <field name="source_url"/>
+                        <field name="file_url" widget="url" readonly="1" invisible="not file_url"/>
+                        <field name="file_status" readonly="1"/>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_file_list" model="ir.ui.view">
+        <field name="name">shopify.file.list</field>
+        <field name="model">shopify.file</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/><field name="instance_id"/>
+                <field name="file_status"/><field name="file_url" widget="url"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_file" model="ir.actions.act_window">
+        <field name="name">Files / Media</field>
+        <field name="res_model">shopify.file</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No files yet</p>
+        <p>Store media / files. Upload assets to Shopify from here.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ TRANSLATIONS ══════════════ -->
+    <record id="view_shopify_translation_form" model="ir.ui.view">
+        <field name="name">shopify.translation.form</field>
+        <field name="model">shopify.translation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_translation" string="Push to Shopify"
+                            type="object" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="resource_type"/>
+                            <field name="resource_gid"/>
+                        </group>
+                        <group>
+                            <field name="locale"/>
+                            <field name="key"/>
+                            <field name="translatable_content_digest"/>
+                        </group>
+                    </group>
+                    <field name="value"/>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_translation_list" model="ir.ui.view">
+        <field name="name">shopify.translation.list</field>
+        <field name="model">shopify.translation</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="instance_id"/><field name="resource_type"/>
+                <field name="locale"/><field name="key"/><field name="value"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_translation" model="ir.actions.act_window">
+        <field name="name">Translations</field>
+        <field name="res_model">shopify.translation</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No translations yet</p>
+        <p>Manage multi-language translations for your store content.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ SEGMENTS ══════════════ -->
+    <record id="view_shopify_segment_list" model="ir.ui.view">
+        <field name="name">shopify.segment.list</field>
+        <field name="model">shopify.segment</field>
+        <field name="arch" type="xml">
+            <list editable="bottom">
+                <field name="name"/><field name="instance_id"/><field name="query"/>
+                <field name="shopify_segment_id" readonly="1"/>
+                <button name="action_push_to_shopify" string="Push" type="object" icon="fa-upload"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_segment" model="ir.actions.act_window">
+        <field name="name">Customer Segments</field>
+        <field name="res_model">shopify.segment</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No segments yet</p>
+        <p>Customer segments sync here from Shopify.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ B2B COMPANIES ══════════════ -->
+    <record id="view_shopify_company_form" model="ir.ui.view">
+        <field name="name">shopify.company.form</field>
+        <field name="model">shopify.company</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_push_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary" invisible="shopify_company_gid"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="external_id"/>
+                            <field name="odoo_partner_id"/>
+                        </group>
+                        <group>
+                            <field name="total_spent" readonly="1"/>
+                            <field name="currency" readonly="1"/>
+                            <field name="locations_count" readonly="1"/>
+                            <field name="contact_count" readonly="1"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+    <record id="view_shopify_company_list" model="ir.ui.view">
+        <field name="name">shopify.company.list</field>
+        <field name="model">shopify.company</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/><field name="instance_id"/>
+                <field name="total_spent"/><field name="locations_count"/>
+                <field name="contact_count"/><field name="odoo_partner_id"/>
+            </list>
+        </field>
+    </record>
+    <record id="action_shopify_company" model="ir.actions.act_window">
+        <field name="name">B2B Companies</field>
+        <field name="res_model">shopify.company</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Add your first B2B company</p>
+        <p>B2B companies and their locations sync here.</p>
+    </field>
+    </record>
+</odoo>

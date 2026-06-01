@@ -1,0 +1,4 @@
+# oodoshopify runtime dependencies
+# The only external dependency beyond Odoo core.
+# Pin to avoid supply-chain drift.
+requests>=2.31.0,<3.0.0

@@ -1,0 +1,47 @@
+# ──────────────────────────────────────────────────────────────────────────
+# Odoo 19 + PostgreSQL — local development environment for the
+# Shopify Odoo Connector (oodoshopify) module.
+#
+# Run from this folder with:   docker compose up
+# Then open:                   http://localhost:8069
+# ──────────────────────────────────────────────────────────────────────────
+services:
+
+  db:
+    image: postgres:16
+    container_name: oodoo-db
+    environment:
+      POSTGRES_DB: postgres
+      POSTGRES_USER: odoo
+      POSTGRES_PASSWORD: odoo
+    volumes:
+      - oodoo-db-data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD", "pg_isready", "-U", "odoo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
+  odoo:
+    image: odoo:19
+    container_name: oodoo-app
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "8069:8069"          # Odoo web interface
+      - "8072:8072"          # live-reload / longpolling
+    environment:
+      HOST: db
+      USER: odoo
+      PASSWORD: odoo
+    volumes:
+      - oodoo-app-data:/var/lib/odoo
+      # Mount our module into Odoo's custom add-ons folder:
+      - ./oodoshopify:/mnt/extra-addons/oodoshopify
+    # --dev=reload restarts Odoo automatically when you edit Python files
+    command: odoo --dev=reload
+
+volumes:
+  oodoo-db-data:
+  oodoo-app-data:

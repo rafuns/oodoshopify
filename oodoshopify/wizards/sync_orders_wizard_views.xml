@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_sync_orders_wizard_form" model="ir.ui.view">
+        <field name="name">shopify.sync.orders.wizard.form</field>
+        <field name="model">shopify.sync.orders.wizard</field>
+        <field name="arch" type="xml">
+            <form string="Sync Orders">
+                <group>
+                    <field name="instance_id"/>
+                    <field name="filter_type"/>
+                    <field name="days_back" invisible="filter_type != 'days_back'"/>
+                    <field name="from_date" invisible="filter_type != 'date_range'"/>
+                    <field name="to_date"   invisible="filter_type != 'date_range'"/>
+                    <field name="order_ids_text" invisible="filter_type != 'ids'"/>
+                    <field name="order_status"/>
+                    <field name="create_sale_orders"/>
+                    <field name="run_in_background"/>
+                </group>
+                <footer>
+                    <button name="action_confirm" string="Import Orders" type="object" class="btn-primary"/>
+                    <button string="Cancel" class="btn-secondary" special="cancel"/>
+                </footer>
+            </form>
+        </field>
+    </record>
+
+    <record id="action_shopify_sync_orders_wizard" model="ir.actions.act_window">
+        <field name="name">Sync Orders</field>
+        <field name="res_model">shopify.sync.orders.wizard</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+    </record>
+</odoo>

@@ -1,0 +1,88 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_bulk_operation_form" model="ir.ui.view">
+        <field name="name">shopify.bulk.operation.form</field>
+        <field name="model">shopify.bulk.operation</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_start" string="Start Export"
+                            type="object" class="btn-primary"
+                            invisible="status not in ('draft',)"/>
+                    <button name="action_refresh_status" string="Refresh Status"
+                            type="object"
+                            invisible="status not in ('running', 'canceling')"/>
+                    <button name="action_process_result" string="Import into Odoo"
+                            type="object" class="btn-primary"
+                            invisible="status != 'completed'"/>
+                    <button name="action_cancel" string="Cancel"
+                            type="object" class="btn-danger"
+                            invisible="status not in ('running',)"/>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="draft,running,completed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="operation_type"/>
+                            <field name="shopify_bulk_gid" readonly="1"/>
+                        </group>
+                        <group>
+                            <field name="object_count" readonly="1"/>
+                            <field name="file_size" readonly="1"/>
+                            <field name="processed_count" readonly="1"/>
+                            <field name="error_code" readonly="1" invisible="not error_code"/>
+                            <field name="result_url" widget="url" readonly="1"
+                                   invisible="not result_url"/>
+                        </group>
+                    </group>
+                    <group string="Custom Query" invisible="operation_type != 'custom'">
+                        <field name="custom_query" nolabel="1"
+                               placeholder="{ products { edges { node { id title } } } }"/>
+                    </group>
+                    <div class="alert alert-info" role="alert">
+                        Bulk operations run asynchronously on Shopify and bypass API rate limits —
+                        ideal for catalogs with 10,000+ products. Status refreshes automatically
+                        every few minutes, and completed exports auto-import.
+                    </div>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_bulk_operation_list" model="ir.ui.view">
+        <field name="name">shopify.bulk.operation.list</field>
+        <field name="model">shopify.bulk.operation</field>
+        <field name="arch" type="xml">
+            <list decoration-success="status == 'completed'"
+                  decoration-info="status == 'running'"
+                  decoration-danger="status in ('failed','expired')">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="operation_type"/>
+                <field name="object_count"/>
+                <field name="processed_count"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'completed'"
+                       decoration-info="status == 'running'"
+                       decoration-danger="status in ('failed','expired')"/>
+                <field name="create_date"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_bulk_operation" model="ir.actions.act_window">
+        <field name="name">Bulk Operations</field>
+        <field name="res_model">shopify.bulk.operation</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No bulk operations yet</p>
+        <p>Large imports/exports run as Shopify bulk jobs — their progress and results show up here.</p>
+    </field>
+    </record>
+</odoo>

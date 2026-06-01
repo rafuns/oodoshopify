@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_theme_form" model="ir.ui.view">
+        <field name="name">shopify.theme.form</field>
+        <field name="model">shopify.theme</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_publish_theme" string="Set as Active Theme" type="object"
+                            class="btn-primary"
+                            invisible="is_active"/>
+                    <button name="action_fetch_settings" string="Load Settings" type="object"/>
+                    <button name="action_push_settings" string="Push Settings to Shopify" type="object"/>
+                    <button name="action_fetch_assets" string="Load Assets" type="object"/>
+                    <button name="action_fetch_asset_content" string="Browse Assets" type="object"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="shopify_theme_id"/>
+                            <field name="role" widget="badge"
+                                   decoration-success="role == 'main'"
+                                   decoration-muted="role != 'main'"/>
+                            <field name="is_active"/>
+                        </group>
+                        <group>
+                            <field name="created_at"/>
+                            <field name="updated_at"/>
+                            <field name="previewable"/>
+                            <field name="processing"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Settings">
+                            <field name="setting_ids">
+                                <list editable="bottom">
+                                    <field name="section"/>
+                                    <field name="key"/>
+                                    <field name="value"/>
+                                    <field name="original_value" readonly="1"/>
+                                    <field name="is_modified" widget="boolean" readonly="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Assets">
+                            <field name="asset_ids">
+                                <list>
+                                    <field name="key"/>
+                                    <field name="content_type"/>
+                                    <field name="size"/>
+                                    <field name="updated_at"/>
+                                    <field name="is_loaded"/>
+                                    <button name="action_load_content" string="Load" type="object" icon="fa-download"
+                                            invisible="is_loaded"/>
+                                    <button name="action_save_to_shopify" string="Push" type="object" icon="fa-upload"
+                                            invisible="not is_loaded"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_theme_list" model="ir.ui.view">
+        <field name="name">shopify.theme.list</field>
+        <field name="model">shopify.theme</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="shopify_theme_id"/>
+                <field name="role" widget="badge"
+                       decoration-success="role == 'main'"
+                       decoration-muted="role != 'main'"/>
+                <field name="is_active"/>
+                <field name="updated_at"/>
+                <button name="action_publish_theme" string="Activate" type="object" icon="fa-check"
+                        invisible="is_active"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_theme" model="ir.actions.act_window">
+        <field name="name">Shopify Themes</field>
+        <field name="res_model">shopify.theme</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No themes yet</p>
+        <p>Open your store and sync themes to manage settings and assets from Odoo.</p>
+    </field>
+    </record>
+</odoo>

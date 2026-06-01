@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_queue_list" model="ir.ui.view">
+        <field name="name">shopify.queue.list</field>
+        <field name="model">shopify.queue</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="operation"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'done'"
+                       decoration-warning="state == 'pending'"
+                       decoration-info="state == 'running'"
+                       decoration-danger="state == 'failed'"/>
+                <field name="retry_count"/>
+                <field name="create_date"/>
+                <button name="action_retry" string="Retry" type="object" icon="fa-refresh"
+                        invisible="state != 'failed'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_queue" model="ir.actions.act_window">
+        <field name="name">Sync Queue</field>
+        <field name="res_model">shopify.queue</field>
+        <field name="view_mode">list</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">The sync queue is empty</p>
+        <p>Pending and failed sync jobs appear here and retry automatically.</p>
+    </field>
+    </record>
+</odoo>

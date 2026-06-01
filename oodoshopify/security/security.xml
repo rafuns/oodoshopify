@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="shopify_group_user" model="res.groups">
+        <field name="name">Shopify / User</field>
+    </record>
+    <record id="shopify_group_manager" model="res.groups">
+        <field name="name">Shopify / Manager</field>
+        <field name="user_ids" eval="[(4, ref('base.user_root')), (4, ref('base.user_admin'))]"/>
+        <field name="implied_ids" eval="[(4, ref('shopify_group_user'))]"/>
+    </record>
+
+    <!-- Auto-managed: granted to Shopify users only while at least one
+         instance is connected. Operational menus are gated on this group,
+         so they stay hidden until the first successful connection. -->
+    <record id="shopify_group_connected" model="res.groups">
+        <field name="name">Shopify / Connected (automatic)</field>
+    </record>
+</odoo>

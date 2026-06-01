@@ -1,0 +1,118 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_return_form" model="ir.ui.view">
+        <field name="name">shopify.return.form</field>
+        <field name="model">shopify.return</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_load_returnable_items" string="Load Returnable Items"
+                            type="object"
+                            invisible="status not in ('draft',)"/>
+                    <button name="action_create_return" string="Create Return on Shopify"
+                            type="object" class="btn-primary"
+                            invisible="status not in ('draft',)"/>
+                    <button name="action_approve" string="Approve"
+                            type="object" class="btn-primary"
+                            invisible="status not in ('requested',)"/>
+                    <button name="action_decline" string="Decline"
+                            type="object" class="btn-danger"
+                            invisible="status not in ('requested',)"/>
+                    <button name="action_close" string="Close Return"
+                            type="object"
+                            invisible="status not in ('open',)"/>
+                    <button name="action_view_return_picking" string="View Return Delivery"
+                            type="object"
+                            invisible="not odoo_return_picking_id"/>
+                    <field name="status" widget="statusbar"
+                           statusbar_visible="draft,requested,open,closed"/>
+                </header>
+                <sheet>
+                    <div class="oe_title">
+                        <h1><field name="name"/></h1>
+                    </div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="shopify_order_id"/>
+                            <field name="odoo_sale_order_id"/>
+                            <field name="shopify_return_id"/>
+                        </group>
+                        <group>
+                            <field name="total_quantity"/>
+                            <field name="restock"/>
+                            <field name="notify_customer"/>
+                            <field name="odoo_return_picking_id" readonly="1"/>
+                            <field name="odoo_refund_id" readonly="1"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Return Lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="product_name"/>
+                                    <field name="sku"/>
+                                    <field name="max_quantity"/>
+                                    <field name="quantity"/>
+                                    <field name="return_reason"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_return_list" model="ir.ui.view">
+        <field name="name">shopify.return.list</field>
+        <field name="model">shopify.return</field>
+        <field name="arch" type="xml">
+            <list decoration-success="status == 'closed'"
+                  decoration-info="status == 'open'"
+                  decoration-warning="status == 'requested'"
+                  decoration-danger="status == 'declined'">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="shopify_order_id"/>
+                <field name="total_quantity"/>
+                <field name="status" widget="badge"
+                       decoration-success="status == 'closed'"
+                       decoration-info="status == 'open'"
+                       decoration-warning="status == 'requested'"
+                       decoration-danger="status == 'declined'"/>
+                <field name="odoo_return_picking_id" optional="show"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="view_shopify_return_search" model="ir.ui.view">
+        <field name="name">shopify.return.search</field>
+        <field name="model">shopify.return</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="name"/>
+                <field name="shopify_order_id"/>
+                <field name="instance_id"/>
+                <filter string="Requested" name="requested" domain="[('status','=','requested')]"/>
+                <filter string="Open" name="open" domain="[('status','=','open')]"/>
+                <filter string="Closed" name="closed" domain="[('status','=','closed')]"/>
+                <group>
+                    <filter string="Store" name="by_store" context="{'group_by':'instance_id'}"/>
+                    <filter string="Status" name="by_status" context="{'group_by':'status'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_return" model="ir.actions.act_window">
+        <field name="name">Returns / RMA</field>
+        <field name="res_model">shopify.return</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No returns yet</p>
+        <p>Returns / RMAs import from Shopify and can drive Odoo return pickings.</p>
+    </field>
+    </record>
+</odoo>

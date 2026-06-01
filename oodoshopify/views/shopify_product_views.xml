@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_shopify_product_form" model="ir.ui.view">
+        <field name="name">shopify.product.form</field>
+        <field name="model">shopify.product</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_export_to_shopify" string="Push to Shopify"
+                            type="object" class="btn-primary"/>
+                    <button string="View on Shopify" type="url" url="shopify_admin_url"
+                            invisible="not shopify_admin_url" icon="fa-external-link"/>
+                    <button name="action_push_prices" string="Push Prices" type="object"/>
+                    <button name="action_push_seo_tags" string="Push Tags &amp; SEO" type="object"/>
+                    <button name="action_sync_inventory" string="Sync Inventory" type="object"/>
+                    <button name="action_publish" string="Publish" type="object"
+                            invisible="shopify_status == 'ACTIVE'"/>
+                    <button name="action_unpublish" string="Unpublish" type="object"
+                            invisible="shopify_status != 'ACTIVE'"/>
+                    <field name="sync_status" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <group>
+                        <group string="Shopify">
+                            <field name="name"/>
+                            <field name="instance_id"/>
+                            <field name="shopify_product_id"/>
+                            <field name="shopify_status" widget="badge"
+                                   decoration-success="shopify_status == 'ACTIVE'"
+                                   decoration-warning="shopify_status == 'DRAFT'"
+                                   decoration-muted="shopify_status == 'ARCHIVED'"/>
+                        </group>
+                        <group string="Odoo">
+                            <field name="odoo_product_id"/>
+                            <field name="sync_status"/>
+                            <field name="last_synced"/>
+                            <field name="shopify_product_url" widget="url"/>
+                        </group>
+                    </group>
+
+                    <!-- BoM / Kit -->
+                    <group string="Kit / Bundle">
+                        <field name="is_kit"/>
+                        <field name="bom_id" invisible="not is_kit" required="is_kit"/>
+                    </group>
+
+                    <!-- Tags -->
+                    <group string="Tags">
+                        <field name="tags" nolabel="1"
+                               placeholder="tag1, tag2, tag3 — merged with Odoo product tags on export"/>
+                    </group>
+
+                    <!-- SEO -->
+                    <group string="SEO">
+                        <group>
+                            <field name="seo_title"
+                                   placeholder="Leave empty to use product title"/>
+                        </group>
+                        <group/>
+                        <field name="seo_description" nolabel="1"
+                               placeholder="Search engine description (max 320 chars)"
+                               colspan="2"/>
+                    </group>
+
+                    <notebook>
+                        <page string="Variants">
+                            <field name="variant_ids">
+                                <list editable="bottom">
+                                    <field name="shopify_variant_id"/>
+                                    <field name="title"/>
+                                    <field name="sku"/>
+                                    <field name="price"/>
+                                    <field name="compare_at_price"/>
+                                    <field name="inventory_quantity"/>
+                                    <field name="odoo_variant_id"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Images">
+                            <field name="image_ids">
+                                <list>
+                                    <field name="position" readonly="1"/>
+                                    <field name="image_url" widget="url"/>
+                                    <field name="alt_text"/>
+                                    <field name="is_primary" widget="boolean" readonly="1"/>
+                                </list>
+                            </field>
+                        </page>
+                        <page string="Metafields">
+                            <div class="mb-2">
+                                <button name="action_fetch_metafields" string="Fetch from Shopify"
+                                        type="object" class="btn btn-sm btn-secondary me-1"
+                                        icon="fa-download"/>
+                                <button name="action_push_metafields" string="Push Modified"
+                                        type="object" class="btn btn-sm btn-secondary"
+                                        icon="fa-upload"/>
+                            </div>
+                            <field name="metafield_ids" widget="one2many">
+                                <list editable="bottom" decoration-warning="is_modified">
+                                    <field name="namespace"/>
+                                    <field name="key"/>
+                                    <field name="value"/>
+                                    <field name="value_type"/>
+                                    <field name="is_modified" widget="boolean"/>
+                                    <field name="mapped_odoo_field" optional="hide"/>
+                                    <button name="action_push_to_shopify" string="Push"
+                                            type="object" icon="fa-upload"
+                                            invisible="not is_modified"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_product_list" model="ir.ui.view">
+        <field name="name">shopify.product.list</field>
+        <field name="model">shopify.product</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="odoo_product_id"/>
+                <field name="shopify_product_id"/>
+                <field name="shopify_status" widget="badge"
+                       decoration-success="shopify_status == 'ACTIVE'"
+                       decoration-warning="shopify_status == 'DRAFT'"
+                       decoration-muted="shopify_status == 'ARCHIVED'"/>
+                <field name="tags" optional="show"/>
+                <field name="sync_status" widget="badge"
+                       decoration-success="sync_status == 'synced'"
+                       decoration-warning="sync_status == 'pending'"
+                       decoration-danger="sync_status == 'error'"/>
+                <field name="last_synced"/>
+                <field name="exclude_from_sync" widget="boolean" optional="show"/>
+                <field name="track_inventory" widget="boolean" optional="hide"/>
+                <button name="action_push_prices" string="Prices" type="object" icon="fa-tag"
+                        invisible="exclude_from_sync"/>
+                <button name="action_push_seo_tags" string="SEO/Tags" type="object" icon="fa-search"
+                        invisible="exclude_from_sync"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_product" model="ir.actions.act_window">
+        <field name="name">Shopify Products</field>
+        <field name="res_model">shopify.product</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Add your first product</p>
+        <p>Run <b>Sync → Sync Products / Prices</b> to import your catalog, or click <b>New</b> to create a product and push it to Shopify.</p>
+    </field>
+    </record>
+</odoo>

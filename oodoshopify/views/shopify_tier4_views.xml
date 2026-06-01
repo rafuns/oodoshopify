@@ -1,0 +1,171 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <!-- ══════════════ INVENTORY TRANSFERS ══════════════ -->
+    <record id="view_shopify_inventory_transfer_form" model="ir.ui.view">
+        <field name="name">shopify.inventory.transfer.form</field>
+        <field name="model">shopify.inventory.transfer</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_execute_transfer" string="Execute Transfer"
+                            type="object" class="btn-primary"
+                            invisible="state == 'completed'"/>
+                    <field name="state" widget="statusbar"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="origin_location_id"/>
+                        </group>
+                        <group>
+                            <field name="dest_location_id"/>
+                        </group>
+                    </group>
+                    <notebook>
+                        <page string="Lines">
+                            <field name="line_ids">
+                                <list editable="bottom">
+                                    <field name="product_name"/>
+                                    <field name="sku"/>
+                                    <field name="shopify_inventory_item_gid"/>
+                                    <field name="quantity"/>
+                                </list>
+                            </field>
+                        </page>
+                    </notebook>
+                </sheet>
+                <chatter/>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_inventory_transfer_list" model="ir.ui.view">
+        <field name="name">shopify.inventory.transfer.list</field>
+        <field name="model">shopify.inventory.transfer</field>
+        <field name="arch" type="xml">
+            <list decoration-success="state == 'completed'" decoration-danger="state == 'error'">
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="origin_location_id"/>
+                <field name="dest_location_id"/>
+                <field name="state" widget="badge"
+                       decoration-success="state == 'completed'"
+                       decoration-danger="state == 'error'"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_inventory_transfer" model="ir.actions.act_window">
+        <field name="name">Inventory Transfers</field>
+        <field name="res_model">shopify.inventory.transfer</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">No transfers yet</p>
+        <p>Inventory transfers between locations sync here.</p>
+    </field>
+    </record>
+
+    <!-- ══════════════ SALES ANALYSIS ══════════════ -->
+    <record id="view_shopify_sales_report_pivot" model="ir.ui.view">
+        <field name="name">shopify.sales.report.pivot</field>
+        <field name="model">shopify.sales.report</field>
+        <field name="arch" type="xml">
+            <pivot string="Sales Analysis">
+                <field name="instance_id" type="row"/>
+                <field name="product_name" type="row"/>
+                <field name="line_total" type="measure"/>
+                <field name="quantity" type="measure"/>
+            </pivot>
+        </field>
+    </record>
+
+    <record id="view_shopify_sales_report_graph" model="ir.ui.view">
+        <field name="name">shopify.sales.report.graph</field>
+        <field name="model">shopify.sales.report</field>
+        <field name="arch" type="xml">
+            <graph string="Sales Analysis" type="bar">
+                <field name="source_name"/>
+                <field name="line_total" type="measure"/>
+            </graph>
+        </field>
+    </record>
+
+    <record id="view_shopify_sales_report_search" model="ir.ui.view">
+        <field name="name">shopify.sales.report.search</field>
+        <field name="model">shopify.sales.report</field>
+        <field name="arch" type="xml">
+            <search>
+                <field name="product_name"/>
+                <field name="instance_id"/>
+                <field name="source_name"/>
+                <group>
+                    <filter string="Store" name="g_store" context="{'group_by':'instance_id'}"/>
+                    <filter string="Product" name="g_product" context="{'group_by':'product_name'}"/>
+                    <filter string="Channel" name="g_channel" context="{'group_by':'source_name'}"/>
+                    <filter string="Order Date" name="g_date" context="{'group_by':'order_date'}"/>
+                </group>
+            </search>
+        </field>
+    </record>
+
+    <record id="action_shopify_sales_report" model="ir.actions.act_window">
+        <field name="name">Sales Analysis</field>
+        <field name="res_model">shopify.sales.report</field>
+        <field name="view_mode">pivot,graph</field>
+    </record>
+
+    <!-- ══════════════ SCHEDULED REPORTS ══════════════ -->
+    <record id="view_shopify_scheduled_report_form" model="ir.ui.view">
+        <field name="name">shopify.scheduled.report.form</field>
+        <field name="model">shopify.scheduled.report</field>
+        <field name="arch" type="xml">
+            <form>
+                <header>
+                    <button name="action_send_now" string="Send Now" type="object" class="btn-primary"/>
+                </header>
+                <sheet>
+                    <div class="oe_title"><h1><field name="name"/></h1></div>
+                    <group>
+                        <group>
+                            <field name="instance_id"/>
+                            <field name="report_type"/>
+                            <field name="frequency"/>
+                        </group>
+                        <group>
+                            <field name="active"/>
+                            <field name="last_sent" readonly="1"/>
+                            <field name="recipient_ids" widget="many2many_tags"/>
+                        </group>
+                    </group>
+                </sheet>
+            </form>
+        </field>
+    </record>
+
+    <record id="view_shopify_scheduled_report_list" model="ir.ui.view">
+        <field name="name">shopify.scheduled.report.list</field>
+        <field name="model">shopify.scheduled.report</field>
+        <field name="arch" type="xml">
+            <list>
+                <field name="name"/>
+                <field name="instance_id"/>
+                <field name="report_type"/>
+                <field name="frequency"/>
+                <field name="last_sent"/>
+                <field name="active" widget="boolean"/>
+            </list>
+        </field>
+    </record>
+
+    <record id="action_shopify_scheduled_report" model="ir.actions.act_window">
+        <field name="name">Scheduled Reports</field>
+        <field name="res_model">shopify.scheduled.report</field>
+        <field name="view_mode">list,form</field>
+        <field name="help" type="html">
+        <p class="o_view_nocontent_smiling_face">Schedule your first report</p>
+        <p>Set up recurring email reports of your Shopify analytics.</p>
+    </field>
+    </record>
+</odoo>
