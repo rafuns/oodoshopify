@@ -73,6 +73,16 @@ class ShopifyInstance(models.Model):
     ai_base_url = fields.Char(string='AI Base URL', default='https://api.openai.com/v1',
                               help='OpenAI-compatible API base (change for Azure/OpenRouter/local).')
     ai_model = fields.Char(string='AI Model', default='gpt-4o-mini')
+
+    # ── Sales import options ─────────────────────────────────────────────────
+    order_prefix = fields.Char(
+        string='Store Prefix',
+        help='Store identifier mapped onto each imported Sales Order '
+             '(Shopify: Settings → General → Order ID Format → Prefix, e.g. "ZA" or "EU").')
+    import_paid_unfulfilled_only = fields.Boolean(
+        string='Import only Paid + Unfulfilled',
+        help='When set, only orders that are Paid and not yet Fulfilled are imported '
+             '(unpaid orders import once they become paid; fulfilled orders are skipped).')
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse')
     pricelist_id = fields.Many2one('product.pricelist', string='Default Pricelist')
 

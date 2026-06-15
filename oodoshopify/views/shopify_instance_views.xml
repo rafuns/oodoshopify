@@ -99,6 +99,10 @@
                             <field name="order_import_delay_minutes"/>
                             <field name="fallback_customer_id"/>
                         </group>
+                        <group>
+                            <field name="order_prefix"/>
+                            <field name="import_paid_unfulfilled_only"/>
+                        </group>
                     </group>
                     <group string="Abandoned Checkouts &amp; CRM">
                         <group>

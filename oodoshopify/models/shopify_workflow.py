@@ -25,6 +25,17 @@ class ShopifyWorkflow(models.Model):
         default=True,
         help='Automatically confirm (validate) the sale order when imported.',
     )
+    use_shopify_order_number = fields.Boolean(
+        string='Use Shopify Order Number as SO Number',
+        default=False,
+        help="Override Odoo's auto-generated Sales Order number with the Shopify "
+             "order number (e.g. ZA1001), so order numbers match across systems.",
+    )
+    archive_order_after_fulfillment = fields.Boolean(
+        string='Archive Shopify Order After Fulfilment',
+        default=False,
+        help='Close (archive) the order on Shopify once it is fulfilled from Odoo.',
+    )
 
     # ── Delivery ─────────────────────────────────────────────────────────────
     auto_create_delivery = fields.Boolean(

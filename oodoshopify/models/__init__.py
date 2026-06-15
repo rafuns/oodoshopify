@@ -27,6 +27,7 @@ from . import shopify_payout
 from . import shopify_stock_quant
 from . import shopify_queue
 from . import shopify_import_job
+from . import shopify_sale_order
 from . import shopify_scheduled_push
 from . import shopify_scheduled_sale
 from . import shopify_drift

@@ -164,6 +164,15 @@ MUTATION_ORDER_MARK_AS_PAID = '''
     }
 '''
 
+MUTATION_ORDER_CLOSE = '''
+    mutation orderClose($input: OrderCloseInput!) {
+        orderClose(input: $input) {
+            order { id closed }
+            userErrors { field message }
+        }
+    }
+'''
+
 MUTATION_FULFILLMENT_CREATE = '''
     mutation fulfillmentCreate($fulfillment: FulfillmentInput!) {
         fulfillmentCreate(fulfillment: $fulfillment) {
@@ -419,6 +428,10 @@ class ShopifyOrder(models.Model):
         """
         from datetime import datetime, timedelta
         delay_minutes = instance.order_import_delay_minutes or 0
+        # Optional store policy: only Paid + Unfulfilled orders (applied to every
+        # import path — wizard, cron and chunked — since all route through here).
+        if instance.import_paid_unfulfilled_only:
+            query_filter = (query_filter + ' financial_status:paid fulfillment_status:unfulfilled').strip()
         variables = {'first': 50, 'after': cursor, 'query': query_filter}
         data = instance._graphql_request(QUERY_ORDERS, variables=variables)
         connection = data.get('orders', {})
@@ -605,14 +618,27 @@ class ShopifyOrder(models.Model):
             )
         # ──────────────────────────────────────────────────────────────────────
 
+        workflow = self.env['shopify.workflow'].search(
+            [('instance_id', '=', self.instance_id.id)], limit=1
+        )
+
         so_vals = {
             'partner_id': partner.id,
             'company_id': self.instance_id.company_id.id,
             'warehouse_id': self.instance_id.warehouse_id.id if self.instance_id.warehouse_id else False,
             'pricelist_id': pricelist.id if pricelist else False,
-            'note': f'Shopify Order: {self.name}',
+            'note': self.order_note or (_('Shopify Order: %s') % self.name),
             'origin': self.name,
+            'client_order_ref': self.name,
+            # Shopify provenance / store identifier mapped onto the Sales Order
+            'shopify_instance_id': self.instance_id.id,
+            'shopify_order_number': self.name,
+            'sales_order_prefix': self.instance_id.order_prefix or '',
+            'shopify_tags': self.order_tags or '',
         }
+        # Optionally use the Shopify order number as the Odoo SO number
+        if workflow and workflow.use_shopify_order_number and self.name:
+            so_vals['name'] = self.name
         # Override currency if it differs from the pricelist's currency
         if odoo_currency and (not pricelist or pricelist.currency_id != odoo_currency):
             so_vals['currency_id'] = odoo_currency.id
@@ -635,10 +661,7 @@ class ShopifyOrder(models.Model):
 
         self.write({'odoo_sale_order_id': sale_order.id})
 
-        # Run order workflow automation if configured
-        workflow = self.env['shopify.workflow'].search(
-            [('instance_id', '=', self.instance_id.id)], limit=1
-        )
+        # Run order workflow automation if configured (workflow resolved above)
         if workflow:
             workflow.run_workflow(sale_order, self)
             workflow.notify_order_confirmation(self)
@@ -741,6 +764,17 @@ class ShopifyOrder(models.Model):
             # Send Odoo shipping notification if Shopify's is suppressed
             if workflow and workflow.suppress_shopify_emails:
                 workflow.notify_order_shipped(self)
+
+            # Optionally archive (close) the order on Shopify after fulfilment
+            if workflow and workflow.archive_order_after_fulfillment and self.shopify_order_gid:
+                try:
+                    close = self.instance_id._graphql_request(
+                        MUTATION_ORDER_CLOSE, variables={'input': {'id': self.shopify_order_gid}})
+                    errs = (close.get('orderClose') or {}).get('userErrors', [])
+                    if errs:
+                        _logger.warning('Order close failed for %s: %s', self.name, errs[0].get('message'))
+                except Exception as e:
+                    _logger.warning('Order close failed for %s: %s', self.name, e)
 
     # ------------------------------------------------------------------
     # Tags & Notes  (push Odoo values to Shopify)

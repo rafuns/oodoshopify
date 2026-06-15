@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8"?>
+<odoo>
+    <record id="view_order_form_shopify" model="ir.ui.view">
+        <field name="name">sale.order.form.shopify</field>
+        <field name="model">sale.order</field>
+        <field name="inherit_id" ref="sale.view_order_form"/>
+        <field name="arch" type="xml">
+            <field name="client_order_ref" position="after">
+                <field name="shopify_order_number" readonly="1"
+                       invisible="not shopify_order_number"/>
+                <field name="sales_order_prefix" readonly="1"
+                       invisible="not shopify_instance_id"/>
+                <field name="shopify_instance_id" readonly="1"
+                       invisible="not shopify_instance_id"/>
+                <field name="shopify_tags" readonly="1"
+                       invisible="not shopify_tags"/>
+            </field>
+        </field>
+    </record>
+</odoo>

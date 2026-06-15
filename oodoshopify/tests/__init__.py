@@ -32,3 +32,4 @@ from . import test_scheduled_sale
 from . import test_refund_push
 from . import test_innovations
 from . import test_innovations2
+from . import test_client_reqs
