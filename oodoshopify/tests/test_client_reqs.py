@@ -62,3 +62,76 @@ class TestSalesImportFidelity(ShopifyTestBase):
         with patch.object(type(self.instance), '_graphql_request', side_effect=fake):
             self.env['shopify.order'].import_orders_page(self.instance, 'created_at:>=2024-01-01', None)
         self.assertNotIn('financial_status:paid', captured['q'])
+
+
+class TestOrderEditing(ShopifyTestBase):
+
+    def _fake_graphql(self, calls, lines=None):
+        if lines is None:
+            lines = [{'id': 'gid://shopify/CalculatedLineItem/9', 'quantity': 2,
+                      'variant': {'id': 'gid://shopify/ProductVariant/77', 'sku': 'A'}}]
+        def fake(query, variables=None, **kw):
+            calls.append((query, variables))
+            if 'orderEditBegin' in query:
+                return {'orderEditBegin': {'calculatedOrder': {
+                    'id': 'gid://shopify/CalculatedOrder/1',
+                    'lineItems': {'edges': [{'node': n} for n in lines]}}, 'userErrors': []}}
+            if 'orderEditSetQuantity' in query:
+                return {'orderEditSetQuantity': {'calculatedOrder': {'id': 'x'}, 'userErrors': []}}
+            if 'orderEditCommit' in query:
+                return {'orderEditCommit': {'order': {'id': 'x'}, 'userErrors': []}}
+            return {}
+        return fake
+
+    def test_set_line_quantity(self):
+        order = self._make_shopify_order()
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake_graphql(calls)):
+            order.action_set_line_quantity('gid://shopify/ProductVariant/77', 5)
+        sq = next(v for q, v in calls if 'orderEditSetQuantity' in q)
+        self.assertEqual(sq['quantity'], 5)
+        self.assertEqual(sq['lineItemId'], 'gid://shopify/CalculatedLineItem/9')
+        self.assertTrue(any('orderEditCommit' in q for q, v in calls))
+
+    def test_remove_line_sets_qty_zero(self):
+        order = self._make_shopify_order()
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake_graphql(calls)):
+            order.action_remove_line_item('gid://shopify/ProductVariant/77')
+        sq = next(v for q, v in calls if 'orderEditSetQuantity' in q)
+        self.assertEqual(sq['quantity'], 0)
+
+    def test_variant_not_on_order_raises(self):
+        from odoo.exceptions import UserError
+        order = self._make_shopify_order()
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake_graphql(calls)):
+            with self.assertRaises(UserError):
+                order.action_set_line_quantity('gid://shopify/ProductVariant/NOPE', 3)
+
+
+class TestStoreCreditRefund(ShopifyTestBase):
+
+    def _cancel_capture(self, **wf):
+        self.env['shopify.workflow'].create({
+            'instance_id': self.instance.id, 'tax_handling': 'none', **wf})
+        order = self._make_shopify_order()
+        order.shopify_order_gid = 'gid://shopify/Order/9999'
+        cap = {}
+        def fake(query, variables=None, **kw):
+            if 'orderCancel' in query:
+                cap['vars'] = variables
+                return {'orderCancel': {'order': {'id': 'x', 'cancelledAt': '2026-01-01'},
+                        'orderCancelUserErrors': []}}
+            return {}
+        with patch.object(type(self.instance), '_graphql_request', side_effect=fake):
+            order.action_cancel_on_shopify(refund=True)
+        return cap['vars']['refundMethod']
+
+    def test_default_refund_original_payment(self):
+        rm = self._cancel_capture(refund_to_store_credit=False)
+        self.assertEqual(rm, {'originalPaymentMethodsRefund': True})
+
+    def test_store_credit_refund_when_enabled(self):
+        rm = self._cancel_capture(refund_to_store_credit=True)
+        self.assertEqual(rm, {'storeCreditRefund': {}})

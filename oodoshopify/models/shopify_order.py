@@ -876,6 +876,83 @@ class ShopifyOrder(models.Model):
         self.message_post(body=_('Line item added to Shopify order via order editing.'))
         return True
 
+    def _order_edit_begin_with_lines(self):
+        """Begin an order edit and return (calculatedOrderId, [calc line nodes])."""
+        self.ensure_one()
+        if not self.shopify_order_gid:
+            raise UserError(_('Order has no Shopify GID.'))
+        begin = '''
+            mutation orderEditBegin($id: ID!) {
+                orderEditBegin(id: $id) {
+                    calculatedOrder {
+                        id
+                        lineItems(first: 100) {
+                            edges { node { id quantity variant { id sku } } }
+                        }
+                    }
+                    userErrors { field message }
+                }
+            }
+        '''
+        data = self.instance_id._graphql_request(begin, variables={'id': self.shopify_order_gid})
+        result = data.get('orderEditBegin', {})
+        if result.get('userErrors'):
+            raise UserError(_('Order edit begin error: %s') % result['userErrors'][0]['message'])
+        calc = result.get('calculatedOrder') or {}
+        if not calc.get('id'):
+            raise UserError(_('Could not begin order edit.'))
+        return calc['id'], [e['node'] for e in calc.get('lineItems', {}).get('edges', [])]
+
+    def _order_edit_commit(self, calc_id):
+        workflow = self.env['shopify.workflow'].search(
+            [('instance_id', '=', self.instance_id.id)], limit=1)
+        notify = not (workflow and workflow.suppress_shopify_emails)
+        commit = '''
+            mutation orderEditCommit($id: ID!, $notifyCustomer: Boolean) {
+                orderEditCommit(id: $id, notifyCustomer: $notifyCustomer) {
+                    order { id }
+                    userErrors { field message }
+                }
+            }
+        '''
+        data = self.instance_id._graphql_request(commit, variables={'id': calc_id, 'notifyCustomer': notify})
+        result = data.get('orderEditCommit', {})
+        if result.get('userErrors'):
+            raise UserError(_('Order edit commit error: %s') % result['userErrors'][0]['message'])
+
+    def action_set_line_quantity(self, variant_gid, quantity, restock=True):
+        """Change the quantity of an existing line on the Shopify order
+        (quantity=0 removes it), matched by product variant GID."""
+        self.ensure_one()
+        calc_id, lines = self._order_edit_begin_with_lines()
+        line_item_id = next(
+            (n['id'] for n in lines if (n.get('variant') or {}).get('id') == variant_gid), None)
+        if not line_item_id:
+            raise UserError(_('That product is not on the Shopify order, so its quantity '
+                              'cannot be changed.'))
+        setq = '''
+            mutation orderEditSetQuantity($id: ID!, $lineItemId: ID!, $quantity: Int!, $restock: Boolean) {
+                orderEditSetQuantity(id: $id, lineItemId: $lineItemId, quantity: $quantity, restock: $restock) {
+                    calculatedOrder { id }
+                    userErrors { field message }
+                }
+            }
+        '''
+        data = self.instance_id._graphql_request(setq, variables={
+            'id': calc_id, 'lineItemId': line_item_id,
+            'quantity': max(0, int(quantity)), 'restock': restock})
+        result = data.get('orderEditSetQuantity', {})
+        if result.get('userErrors'):
+            raise UserError(_('Set quantity error: %s') % result['userErrors'][0]['message'])
+        self._order_edit_commit(calc_id)
+        action = _('removed from') if int(quantity) <= 0 else _('updated on')
+        self.message_post(body=_('Line %s the Shopify order (qty %s).') % (action, quantity))
+        return True
+
+    def action_remove_line_item(self, variant_gid, restock=True):
+        """Remove a product from the Shopify order (quantity → 0)."""
+        return self.action_set_line_quantity(variant_gid, 0, restock=restock)
+
     # ------------------------------------------------------------------
     # Auto Mark Paid  (Odoo invoice paid → push to Shopify)
     # ------------------------------------------------------------------
@@ -957,7 +1034,7 @@ class ShopifyOrder(models.Model):
 
     def action_cancel_on_shopify(self, reason='OTHER', refund=True, restock=True,
                                   notify_customer=True, staff_note='',
-                                  cancel_odoo_order=False):
+                                  cancel_odoo_order=False, to_store_credit=None):
         """
         Cancel this order on Shopify via the orderCancel GraphQL mutation.
 
@@ -980,12 +1057,20 @@ class ShopifyOrder(models.Model):
         if workflow and workflow.suppress_shopify_emails:
             notify_customer = False
 
+        # Refund method: original payment vs store credit (per workflow setting,
+        # overridable via the to_store_credit argument).
+        if to_store_credit is None:
+            to_store_credit = bool(workflow and workflow.refund_to_store_credit)
+        if refund:
+            refund_method = {'storeCreditRefund': {}} if to_store_credit \
+                else {'originalPaymentMethodsRefund': True}
+        else:
+            refund_method = None
+
         variables = {
             'orderId':        self.shopify_order_gid,
             'reason':         reason,
-            # refund: Boolean was replaced by refundMethod. True → refund to the
-            # original payment method(s); None → cancel without refunding.
-            'refundMethod':   {'originalPaymentMethodsRefund': True} if refund else None,
+            'refundMethod':   refund_method,
             'restock':        restock,
             'notifyCustomer': notify_customer,
             'staffNote':      staff_note or '',

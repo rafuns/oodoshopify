@@ -36,6 +36,13 @@ class ShopifyWorkflow(models.Model):
         default=False,
         help='Close (archive) the order on Shopify once it is fulfilled from Odoo.',
     )
+    refund_to_store_credit = fields.Boolean(
+        string='Refund as Store Credit',
+        default=False,
+        help='When cancelling/refunding from Odoo, issue the refund as Shopify '
+             'store credit instead of to the original payment method. '
+             'Requires Store Credit to be enabled on the Shopify store.',
+    )
 
     # ── Delivery ─────────────────────────────────────────────────────────────
     auto_create_delivery = fields.Boolean(

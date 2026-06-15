@@ -13,6 +13,7 @@
                         <field name="auto_confirm_order"/>
                         <field name="use_shopify_order_number"/>
                         <field name="archive_order_after_fulfillment"/>
+                        <field name="refund_to_store_credit"/>
                         <field name="picking_policy"/>
                     </group>
                     <group string="Fulfillment">
