@@ -135,3 +135,31 @@ class TestStoreCreditRefund(ShopifyTestBase):
     def test_store_credit_refund_when_enabled(self):
         rm = self._cancel_capture(refund_to_store_credit=True)
         self.assertEqual(rm, {'storeCreditRefund': {}})
+
+
+class TestInventoryBroadcast(ShopifyTestBase):
+
+    def test_broadcast_hits_all_stores(self):
+        self.instance.sync_inventory = True
+        tmpl = self.env['product.product'].create(
+            {'name': 'MultiStore Widget', 'type': 'consu'}).product_tmpl_id
+        inst2 = self.env['shopify.instance'].create({
+            'name': 'EU Store', 'shop_domain': 'eu-store.myshopify.com',
+            'state': 'connected', 'sync_inventory': True,
+            'company_id': self.company.id, 'access_token': 'shpat_x',
+            'api_key': 'k', 'api_secret': 's',
+        })
+        p1 = self.env['shopify.product'].create({
+            'name': 'MultiStore Widget', 'instance_id': self.instance.id,
+            'shopify_product_id': 'M1', 'shopify_gid': 'gid://shopify/Product/M1',
+            'odoo_product_id': tmpl.id})
+        p2 = self.env['shopify.product'].create({
+            'name': 'MultiStore Widget', 'instance_id': inst2.id,
+            'shopify_product_id': 'M2', 'shopify_gid': 'gid://shopify/Product/M2',
+            'odoo_product_id': tmpl.id})
+        hit = []
+        with patch.object(type(self.env['shopify.product']), 'action_sync_inventory',
+                          autospec=True, side_effect=lambda self: hit.extend(self.ids)):
+            p1.broadcast_inventory()
+        self.assertIn(p1.id, hit)
+        self.assertIn(p2.id, hit)  # fanned out to the other store

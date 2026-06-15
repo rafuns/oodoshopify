@@ -189,4 +189,14 @@
         <field name="interval_type">days</field>
         <field name="active">False</field>
     </record>
+
+    <record id="cron_broadcast_inventory" model="ir.cron">
+        <field name="name">Shopify: Broadcast Inventory to All Stores</field>
+        <field name="model_id" ref="model_shopify_product"/>
+        <field name="state">code</field>
+        <field name="code">model.cron_broadcast_inventory()</field>
+        <field name="interval_number">3</field>
+        <field name="interval_type">hours</field>
+        <field name="active">False</field>
+    </record>
 </odoo>

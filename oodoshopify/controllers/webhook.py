@@ -206,6 +206,18 @@ class ShopifyWebhookController(http.Controller):
                         'Inventory webhook: item %s at %s → %s',
                         inv_item_id, location.name, available,
                     )
+            # Multi-store fan-out: re-broadcast Odoo's authoritative stock for
+            # this product to every connected store (keeps all stores identical).
+            if instance.broadcast_inventory_multistore:
+                variant = request.env['shopify.product.variant'].sudo().search([
+                    ('shopify_inventory_item_id', '=', inv_item_id),
+                    ('shopify_product_id.instance_id', '=', instance.id),
+                ], limit=1)
+                if variant.shopify_product_id:
+                    try:
+                        variant.shopify_product_id.broadcast_inventory()
+                    except Exception as e:
+                        _logger.warning('Inventory broadcast failed: %s', e)
         return request.make_response('OK', status=200)
 
     @http.route('/shopify/webhook/refunds/create',

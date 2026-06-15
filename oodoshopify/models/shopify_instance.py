@@ -83,6 +83,11 @@ class ShopifyInstance(models.Model):
         string='Import only Paid + Unfulfilled',
         help='When set, only orders that are Paid and not yet Fulfilled are imported '
              '(unpaid orders import once they become paid; fulfilled orders are skipped).')
+    broadcast_inventory_multistore = fields.Boolean(
+        string='Broadcast Inventory to All Stores',
+        help='Keep stock identical across every connected store: when inventory '
+             'changes on any store, Odoo (source of truth) pushes the level to all '
+             'stores that sell the product.')
     warehouse_id = fields.Many2one('stock.warehouse', string='Warehouse')
     pricelist_id = fields.Many2one('product.pricelist', string='Default Pricelist')
 

@@ -799,6 +799,49 @@ class ShopifyProduct(models.Model):
             except UserError as e:
                 _logger.error('Inventory sync failed for %s: %s', rec.name, e)
 
+    # ------------------------------------------------------------------
+    # Multi-store inventory broadcast (Odoo = single source of truth)
+    # ------------------------------------------------------------------
+    def broadcast_inventory(self):
+        """Push Odoo's current stock for each product to EVERY connected store
+        that sells it (matched by Odoo product template), so all Shopify stores
+        stay identical to Odoo. Loop-safe: it pushes Odoo's value, not a delta."""
+        templates = self.mapped('odoo_product_id')
+        if not templates:
+            return
+        siblings = self.search([
+            ('odoo_product_id', 'in', templates.ids),
+            ('shopify_gid', '!=', False),
+            ('instance_id.state', '=', 'connected'),
+            ('instance_id.sync_inventory', '=', True),
+        ])
+        siblings.action_sync_inventory()
+        return True
+
+    @api.model
+    def cron_broadcast_inventory(self):
+        """Periodic reconciliation: push Odoo stock to all stores for every
+        product on instances that have multi-store broadcast enabled."""
+        instances = self.env['shopify.instance'].search([
+            ('state', '=', 'connected'),
+            ('broadcast_inventory_multistore', '=', True),
+            ('sync_inventory', '=', True),
+        ])
+        if not instances:
+            return
+        products = self.search([
+            ('instance_id', 'in', instances.ids), ('shopify_gid', '!=', False)])
+        # Broadcast unique templates once (broadcast_inventory fans out to siblings)
+        seen = set()
+        for product in products:
+            tmpl = product.odoo_product_id.id
+            if tmpl in seen:
+                continue
+            seen.add(tmpl)
+            try:
+                product.broadcast_inventory()
+            except Exception as e:
+                _logger.error('Inventory broadcast failed for %s: %s', product.name, e)
 
     def _get_kit_available_qty(self, location):
         """
