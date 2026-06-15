@@ -186,6 +186,34 @@ MUTATION_FULFILLMENT_CREATE = '''
     }
 '''
 
+# Open/in-progress fulfillment orders + their remaining line items, used to map
+# each Odoo delivery (stock.picking) to the right Shopify fulfillment-order lines
+# for split / partial shipments.
+QUERY_FULFILLMENT_ORDERS = '''
+    query orderFulfillmentOrders($id: ID!) {
+        order(id: $id) {
+            fulfillmentOrders(first: 20) {
+                edges {
+                    node {
+                        id
+                        status
+                        lineItems(first: 100) {
+                            edges {
+                                node {
+                                    id
+                                    remainingQuantity
+                                    sku
+                                    lineItem { sku variant { id } }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+'''
+
 # Financial status mapping: Shopify GQL enum → our selection values
 _FINANCIAL_STATUS_MAP = {
     'PENDING': 'pending',
@@ -720,17 +748,125 @@ class ShopifyOrder(models.Model):
     # ------------------------------------------------------------------
 
     def action_push_tracking_to_shopify(self):
+        """Push tracking/fulfilment to Shopify. Split-aware: each done Odoo
+        delivery becomes its own Shopify fulfilment with its own line items and
+        tracking number (see :meth:`action_push_fulfillments_to_shopify`)."""
         self.ensure_one()
+        if not self.odoo_sale_order_id:
+            raise UserError(_('No linked sale order found.'))
+        created = self.action_push_fulfillments_to_shopify(require_tracking=True)
+        if not created:
+            raise UserError(_('No done delivery with a tracking number found.'))
+        return created
+
+    # ------------------------------------------------------------------
+    # Split / multiple shipments  (one Shopify fulfilment per Odoo delivery)
+    # ------------------------------------------------------------------
+
+    def _fetch_fulfillment_order_lines(self):
+        """Return the order's open fulfilment-order line items as a flat list of
+        mutable dicts: {fo_id, id, remaining, variant_gid, sku}. Used to allocate
+        each Odoo delivery's products to the correct Shopify fulfilment lines."""
+        self.ensure_one()
+        data = self.instance_id._graphql_request(
+            QUERY_FULFILLMENT_ORDERS, variables={'id': self.shopify_order_gid})
+        order = (data or {}).get('order') or {}
+        fo_lines = []
+        for fo_edge in order.get('fulfillmentOrders', {}).get('edges', []):
+            fo = fo_edge.get('node', {})
+            if fo.get('status') in ('CLOSED', 'CANCELLED', 'INCOMPLETE'):
+                continue
+            for li_edge in fo.get('lineItems', {}).get('edges', []):
+                node = li_edge.get('node', {})
+                remaining = node.get('remainingQuantity') or 0
+                if remaining <= 0:
+                    continue
+                line_item = node.get('lineItem') or {}
+                fo_lines.append({
+                    'fo_id': fo['id'],
+                    'id': node['id'],
+                    'remaining': remaining,
+                    'variant_gid': (line_item.get('variant') or {}).get('id'),
+                    'sku': node.get('sku') or line_item.get('sku'),
+                })
+        return fo_lines
+
+    def _picking_product_quantities(self, picking):
+        """Map a delivered picking's done quantities to Shopify identifiers.
+        Returns [(variant_gid, sku, qty)] for each delivered move."""
+        out = []
+        for move in picking.move_ids.filtered(lambda m: m.state == 'done' and m.quantity > 0):
+            variant = self.env['shopify.product.variant'].search([
+                ('odoo_variant_id', '=', move.product_id.id),
+                ('shopify_product_id.instance_id', '=', self.instance_id.id),
+            ], limit=1)
+            out.append((
+                variant.shopify_variant_gid or False,
+                move.product_id.default_code or False,
+                int(move.quantity),
+            ))
+        return out
+
+    def action_push_fulfillments_to_shopify(self, require_tracking=False):
+        """Create one Shopify fulfilment per done Odoo delivery, fulfilling only
+        the line items/quantities in that delivery — so a single Odoo order split
+        across several deliveries maps to several Shopify fulfilments, each with
+        its own tracking number.
+
+        Returns the number of Shopify fulfilments created. Idempotent: deliveries
+        already pushed (``shopify_fulfillment_id`` set) are skipped."""
+        self.ensure_one()
+        if not self.shopify_order_gid:
+            raise UserError(_('Order has no Shopify GID.'))
         if not self.odoo_sale_order_id:
             raise UserError(_('No linked sale order found.'))
 
         pickings = self.odoo_sale_order_id.picking_ids.filtered(
-            lambda p: p.state == 'done' and p.carrier_tracking_ref
+            lambda p: p.state == 'done'
+            and p.picking_type_code == 'outgoing'
+            and not p.shopify_fulfillment_id
+            and (p.carrier_tracking_ref if require_tracking else True)
         )
         if not pickings:
-            raise UserError(_('No done delivery with a tracking number found.'))
+            return 0
+
+        workflow = self.env['shopify.workflow'].search(
+            [('instance_id', '=', self.instance_id.id)], limit=1)
+        notify_via_shopify = not (workflow and workflow.suppress_shopify_emails)
+
+        fo_lines = self._fetch_fulfillment_order_lines()
+        created = 0
 
         for picking in pickings:
+            # Allocate this delivery's products to remaining fulfilment-order lines.
+            by_fo = {}   # fo_id -> [{id, quantity}]
+            for variant_gid, sku, qty in self._picking_product_quantities(picking):
+                need = qty
+                for fo_line in fo_lines:
+                    if need <= 0:
+                        break
+                    if fo_line['remaining'] <= 0:
+                        continue
+                    matches = (
+                        (variant_gid and fo_line['variant_gid'] == variant_gid)
+                        or (sku and fo_line['sku'] and fo_line['sku'] == sku))
+                    if not matches:
+                        continue
+                    take = min(need, fo_line['remaining'])
+                    by_fo.setdefault(fo_line['fo_id'], []).append(
+                        {'id': fo_line['id'], 'quantity': take})
+                    fo_line['remaining'] -= take
+                    need -= take
+
+            line_items_by_fo = [
+                {'fulfillmentOrderId': fo_id, 'fulfillmentOrderLineItems': items}
+                for fo_id, items in by_fo.items()
+            ]
+            if not line_items_by_fo:
+                # No product mapping resolved for this delivery — fall back to
+                # fulfilling the whole remaining order (single-shipment behaviour).
+                line_items_by_fo = [{'fulfillmentOrderId': self.shopify_order_gid}]
+
             tracking_info = []
             if picking.carrier_tracking_ref:
                 tracking_info.append({
@@ -738,35 +874,30 @@ class ShopifyOrder(models.Model):
                     'company': picking.carrier_id.name if picking.carrier_id else '',
                 })
 
-            # Suppress Shopify's own notification if Odoo sends it
-            workflow = self.env['shopify.workflow'].search(
-                [('instance_id', '=', self.instance_id.id)], limit=1
-            )
-            notify_via_shopify = not (workflow and workflow.suppress_shopify_emails)
-
-            fulfillment_input = {
-                'lineItemsByFulfillmentOrder': [
-                    {'fulfillmentOrderId': self.shopify_order_gid}
-                ],
-                'trackingInfo': tracking_info,
-                'notifyCustomer': notify_via_shopify,
-            }
-
             data = self.instance_id._graphql_request(
                 MUTATION_FULFILLMENT_CREATE,
-                variables={'fulfillment': fulfillment_input},
+                variables={'fulfillment': {
+                    'lineItemsByFulfillmentOrder': line_items_by_fo,
+                    'trackingInfo': tracking_info,
+                    'notifyCustomer': notify_via_shopify,
+                }},
             )
             result = data.get('fulfillmentCreate', {})
             user_errors = result.get('userErrors', [])
             if user_errors:
                 raise UserError(_('Fulfillment error: %s') % user_errors[0]['message'])
 
-            # Send Odoo shipping notification if Shopify's is suppressed
+            ful_gid = (result.get('fulfillment') or {}).get('id')
+            picking.shopify_fulfillment_id = ful_gid or 'pushed'
+            created += 1
+
             if workflow and workflow.suppress_shopify_emails:
                 workflow.notify_order_shipped(self)
 
-            # Optionally archive (close) the order on Shopify after fulfilment
-            if workflow and workflow.archive_order_after_fulfillment and self.shopify_order_gid:
+        # Optionally archive (close) the order on Shopify once fully fulfilled.
+        if created and workflow and workflow.archive_order_after_fulfillment:
+            remaining = self._fetch_fulfillment_order_lines()
+            if not remaining:
                 try:
                     close = self.instance_id._graphql_request(
                         MUTATION_ORDER_CLOSE, variables={'input': {'id': self.shopify_order_gid}})
@@ -775,6 +906,10 @@ class ShopifyOrder(models.Model):
                         _logger.warning('Order close failed for %s: %s', self.name, errs[0].get('message'))
                 except Exception as e:
                     _logger.warning('Order close failed for %s: %s', self.name, e)
+
+        if created:
+            self.message_post(body=_('Pushed %d shipment(s) to Shopify.') % created)
+        return created
 
     # ------------------------------------------------------------------
     # Tags & Notes  (push Odoo values to Shopify)

@@ -217,3 +217,119 @@ class TestAutoPush(ShopifyTestBase):
         with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake(calls)):
             so._action_cancel()
         self.assertTrue(any('orderCancel' in q for q, v in calls))
+
+
+class TestSplitShipments(ShopifyTestBase):
+    """§5e — each Odoo delivery becomes its own Shopify fulfilment with its own
+    line items and tracking, so a split order maps to multiple fulfilments."""
+
+    def _setup(self):
+        op = self.env['product.product'].create(
+            {'name': 'Split Widget', 'type': 'consu', 'default_code': 'SW-1'})
+        sp = self.env['shopify.product'].create({
+            'name': 'Split Widget', 'instance_id': self.instance.id,
+            'shopify_product_id': 'S1', 'shopify_gid': 'gid://shopify/Product/S1',
+            'odoo_product_id': op.product_tmpl_id.id})
+        self.env['shopify.product.variant'].create({
+            'shopify_product_id': sp.id,
+            'shopify_variant_gid': 'gid://shopify/ProductVariant/V1',
+            'shopify_variant_id': 'V1', 'odoo_variant_id': op.id})
+        partner = self.env['res.partner'].create({'name': 'Buyer'})
+        so = self.env['sale.order'].create({
+            'partner_id': partner.id,
+            'order_line': [(0, 0, {'product_id': op.id, 'product_uom_qty': 5, 'price_unit': 10})]})
+        order = self._make_shopify_order()
+        order.odoo_sale_order_id = so
+        return op, so, order
+
+    def _make_done_picking(self, so, product, qty, tracking):
+        ptype = self.env['stock.picking.type'].search(
+            [('code', '=', 'outgoing')], limit=1)
+        sol = so.order_line[0]
+        picking = self.env['stock.picking'].create({
+            'picking_type_id': ptype.id,
+            'location_id': ptype.default_location_src_id.id,
+            'location_dest_id': self.env.ref('stock.stock_location_customers').id,
+        })
+        move = self.env['stock.move'].create({
+            'product_id': product.id,
+            'product_uom_qty': qty, 'product_uom': product.uom_id.id,
+            'picking_id': picking.id, 'sale_line_id': sol.id,
+            'location_id': picking.location_id.id,
+            'location_dest_id': picking.location_dest_id.id,
+        })
+        move.write({'state': 'done', 'quantity': qty})
+        picking.write({'state': 'done', 'carrier_tracking_ref': tracking})
+        return picking
+
+    def _fake(self, calls, remaining=5):
+        state = {'remaining': remaining}
+
+        def fake(query, variables=None, **kw):
+            calls.append((query, variables))
+            if 'fulfillmentOrders' in query:
+                return {'order': {'fulfillmentOrders': {'edges': [
+                    {'node': {'id': 'gid://shopify/FulfillmentOrder/FO1', 'status': 'OPEN',
+                              'lineItems': {'edges': [
+                                  {'node': {'id': 'gid://shopify/FulfillmentOrderLineItem/FOLI1',
+                                            'remainingQuantity': state['remaining'], 'sku': 'SW-1',
+                                            'lineItem': {'sku': 'SW-1',
+                                                         'variant': {'id': 'gid://shopify/ProductVariant/V1'}}}}]}}}]}}}
+            if 'fulfillmentCreate' in query:
+                qty = sum(li['quantity']
+                          for fo in variables['fulfillment']['lineItemsByFulfillmentOrder']
+                          for li in fo.get('fulfillmentOrderLineItems', []))
+                state['remaining'] = max(0, state['remaining'] - qty)
+                return {'fulfillmentCreate': {
+                    'fulfillment': {'id': 'gid://shopify/Fulfillment/F%d' % qty}, 'userErrors': []}}
+            return {}
+        return fake
+
+    def test_split_two_deliveries_create_two_fulfillments(self):
+        op, so, order = self._setup()
+        self._make_done_picking(so, op, 2, 'TRACK-A')
+        self._make_done_picking(so, op, 3, 'TRACK-B')
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake(calls)):
+            created = order.action_push_fulfillments_to_shopify()
+        self.assertEqual(created, 2)
+        creates = [v for q, v in calls if 'fulfillmentCreate' in q]
+        self.assertEqual(len(creates), 2)
+        # Quantities allocated per delivery: 2 then 3
+        qtys = sorted(
+            li['quantity']
+            for v in creates
+            for fo in v['fulfillment']['lineItemsByFulfillmentOrder']
+            for li in fo['fulfillmentOrderLineItems'])
+        self.assertEqual(qtys, [2, 3])
+        # Each fulfilment carries its own delivery's tracking number
+        tracks = sorted(v['fulfillment']['trackingInfo'][0]['number'] for v in creates)
+        self.assertEqual(tracks, ['TRACK-A', 'TRACK-B'])
+
+    def test_fulfillment_is_idempotent(self):
+        op, so, order = self._setup()
+        self._make_done_picking(so, op, 5, 'TRACK-A')
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake(calls)):
+            first = order.action_push_fulfillments_to_shopify()
+            second = order.action_push_fulfillments_to_shopify()
+        self.assertEqual(first, 1)
+        self.assertEqual(second, 0)   # already pushed → no duplicate fulfilment
+
+    def test_auto_push_fulfillment_trigger(self):
+        self.env['shopify.workflow'].create({
+            'instance_id': self.instance.id, 'tax_handling': 'none',
+            'auto_push_fulfillments': True})
+        op, so, order = self._setup()
+        so.action_confirm()                       # Odoo generates the delivery
+        picking = so.picking_ids[:1]
+        self.assertTrue(picking, 'SO confirmation should create a delivery')
+        for move in picking.move_ids:
+            move.quantity = move.product_uom_qty
+        picking.carrier_tracking_ref = 'TRACK-A'
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake(calls)):
+            picking.button_validate()
+        self.assertEqual(picking.state, 'done')
+        self.assertTrue(any('fulfillmentCreate' in q for q, v in calls))
+        self.assertTrue(picking.shopify_fulfillment_id)

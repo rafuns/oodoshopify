@@ -1,6 +1,6 @@
 {
     'name': 'Shopify Odoo Connector',
-    'version': '19.0.1.3.0',
+    'version': '19.0.1.4.0',
     'category': 'eCommerce',
     'summary': 'Real-time Shopify sync: orders, products, inventory, customers, '
                'payouts, themes + AI content, profit margins & drift detection',
@@ -42,6 +42,7 @@ Connects to the Shopify Admin API using your own store credentials.
         'crm',
         'mrp',
         'delivery',
+        'stock_delivery',
     ],
     'data': [
         'security/security.xml',

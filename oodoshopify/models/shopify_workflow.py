@@ -55,6 +55,13 @@ class ShopifyWorkflow(models.Model):
         help='Automatically cancel the order on Shopify when the linked Odoo Sales '
              'Order is cancelled.',
     )
+    auto_push_fulfillments = fields.Boolean(
+        string='Auto-Push Fulfilments to Shopify',
+        default=False,
+        help='Automatically create a Shopify fulfilment whenever a delivery for a '
+             'Shopify-linked order is validated in Odoo. Each delivery becomes its '
+             'own fulfilment with its own tracking — supports split / partial shipments.',
+    )
 
     # ── Delivery ─────────────────────────────────────────────────────────────
     auto_create_delivery = fields.Boolean(

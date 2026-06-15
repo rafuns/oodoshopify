@@ -11,6 +11,9 @@
                             invisible="odoo_sale_order_id"/>
                     <button name="action_push_tracking_to_shopify" string="Push Tracking" type="object"
                             invisible="not odoo_sale_order_id"/>
+                    <button name="action_push_fulfillments_to_shopify" string="Push Shipments" type="object"
+                            invisible="not odoo_sale_order_id or fulfillment_status == 'fulfilled'"
+                            help="Create a Shopify fulfilment for each validated Odoo delivery — supports split / partial shipments."/>
                     <button name="action_mark_as_paid_on_shopify" string="Mark as Paid" type="object"
                             invisible="financial_status == 'paid'"/>
                     <button name="action_fetch_metafields" string="Fetch Metafields" type="object"/>

@@ -20,6 +20,7 @@
                     </group>
                     <group string="Fulfillment">
                         <field name="auto_create_delivery"/>
+                        <field name="auto_push_fulfillments"/>
                     </group>
                     <group string="Invoicing">
                         <field name="auto_create_invoice"/>
