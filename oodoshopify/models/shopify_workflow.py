@@ -43,6 +43,18 @@ class ShopifyWorkflow(models.Model):
              'store credit instead of to the original payment method. '
              'Requires Store Credit to be enabled on the Shopify store.',
     )
+    auto_push_edits = fields.Boolean(
+        string='Auto-Push Order Edits to Shopify',
+        default=False,
+        help='Automatically reconcile the Shopify order lines whenever a confirmed, '
+             'Shopify-linked Sales Order is edited in Odoo (quantities / add / remove).',
+    )
+    auto_push_cancel = fields.Boolean(
+        string='Auto-Push Cancellation to Shopify',
+        default=False,
+        help='Automatically cancel the order on Shopify when the linked Odoo Sales '
+             'Order is cancelled.',
+    )
 
     # ── Delivery ─────────────────────────────────────────────────────────────
     auto_create_delivery = fields.Boolean(

@@ -953,6 +953,64 @@ class ShopifyOrder(models.Model):
         """Remove a product from the Shopify order (quantity → 0)."""
         return self.action_set_line_quantity(variant_gid, 0, restock=restock)
 
+    def _order_edit_op(self, mutation, key, variables):
+        data = self.instance_id._graphql_request(mutation, variables=variables)
+        result = data.get(key, {})
+        if result.get('userErrors'):
+            raise UserError(_('%s error: %s') % (key, result['userErrors'][0]['message']))
+
+    def action_sync_lines_to_shopify(self, restock=True):
+        """Reconcile the Shopify order's line items to match the linked Odoo sale
+        order: change quantities, add new products, remove dropped ones — all in a
+        single order-edit transaction. Returns the number of changes applied."""
+        self.ensure_one()
+        so = self.odoo_sale_order_id
+        if not so:
+            raise UserError(_('No linked Odoo sale order to sync from.'))
+
+        # Desired quantities per Shopify variant GID (from the Odoo SO lines)
+        desired = {}
+        for sol in so.order_line.filtered(lambda l: l.product_id and not l.display_type):
+            variant = self.env['shopify.product.variant'].search([
+                ('odoo_variant_id', '=', sol.product_id.id),
+                ('shopify_product_id.instance_id', '=', self.instance_id.id),
+            ], limit=1)
+            if variant.shopify_variant_gid:
+                desired[variant.shopify_variant_gid] = \
+                    desired.get(variant.shopify_variant_gid, 0) + int(sol.product_uom_qty)
+
+        calc_id, lines = self._order_edit_begin_with_lines()
+        current = {(n.get('variant') or {}).get('id'): n
+                   for n in lines if (n.get('variant') or {}).get('id')}
+
+        setq = '''mutation orderEditSetQuantity($id: ID!, $lineItemId: ID!, $quantity: Int!, $restock: Boolean) {
+            orderEditSetQuantity(id: $id, lineItemId: $lineItemId, quantity: $quantity, restock: $restock) {
+                calculatedOrder { id } userErrors { field message } } }'''
+        addv = '''mutation orderEditAddVariant($id: ID!, $variantId: ID!, $quantity: Int!) {
+            orderEditAddVariant(id: $id, variantId: $variantId, quantity: $quantity) {
+                calculatedOrder { id } userErrors { field message } } }'''
+
+        changed = 0
+        # Update / remove existing lines
+        for gid, node in current.items():
+            want = desired.get(gid, 0)
+            if want != node.get('quantity', 0):
+                self._order_edit_op(setq, 'orderEditSetQuantity', {
+                    'id': calc_id, 'lineItemId': node['id'],
+                    'quantity': want, 'restock': restock})
+                changed += 1
+        # Add new lines
+        for gid, want in desired.items():
+            if gid not in current and want > 0:
+                self._order_edit_op(addv, 'orderEditAddVariant', {
+                    'id': calc_id, 'variantId': gid, 'quantity': want})
+                changed += 1
+
+        if changed:
+            self._order_edit_commit(calc_id)
+            self.message_post(body=_('Synced %d line change(s) from Odoo to Shopify.') % changed)
+        return changed
+
     # ------------------------------------------------------------------
     # Auto Mark Paid  (Odoo invoice paid → push to Shopify)
     # ------------------------------------------------------------------

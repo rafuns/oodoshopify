@@ -163,3 +163,57 @@ class TestInventoryBroadcast(ShopifyTestBase):
             p1.broadcast_inventory()
         self.assertIn(p1.id, hit)
         self.assertIn(p2.id, hit)  # fanned out to the other store
+
+
+class TestAutoPush(ShopifyTestBase):
+
+    def _linked_so_and_order(self, qty=3):
+        op = self.env['product.product'].create({'name': 'Recon', 'type': 'consu'})
+        sp = self.env['shopify.product'].create({
+            'name': 'Recon', 'instance_id': self.instance.id,
+            'shopify_product_id': 'R1', 'shopify_gid': 'gid://shopify/Product/R1',
+            'odoo_product_id': op.product_tmpl_id.id})
+        self.env['shopify.product.variant'].create({
+            'shopify_product_id': sp.id, 'shopify_variant_gid': 'gid://shopify/ProductVariant/V1',
+            'shopify_variant_id': 'V1', 'odoo_variant_id': op.id})
+        partner = self.env['res.partner'].create({'name': 'C'})
+        so = self.env['sale.order'].create({
+            'partner_id': partner.id,
+            'order_line': [(0, 0, {'product_id': op.id, 'product_uom_qty': qty, 'price_unit': 10})]})
+        order = self._make_shopify_order()
+        order.odoo_sale_order_id = so
+        order.shopify_order_gid = 'gid://shopify/Order/9999'
+        return so, order
+
+    def _fake(self, calls):
+        def fake(query, variables=None, **kw):
+            calls.append((query, variables))
+            if 'orderEditBegin' in query:
+                return {'orderEditBegin': {'calculatedOrder': {'id': 'C1', 'lineItems': {'edges': [
+                    {'node': {'id': 'L1', 'quantity': 1, 'variant': {'id': 'gid://shopify/ProductVariant/V1'}}}]}}, 'userErrors': []}}
+            if 'orderEditSetQuantity' in query:
+                return {'orderEditSetQuantity': {'calculatedOrder': {'id': 'C1'}, 'userErrors': []}}
+            if 'orderEditCommit' in query:
+                return {'orderEditCommit': {'order': {'id': 'x'}, 'userErrors': []}}
+            if 'orderCancel' in query:
+                return {'orderCancel': {'order': {'id': 'x', 'cancelledAt': '2026'}, 'orderCancelUserErrors': []}}
+            return {}
+        return fake
+
+    def test_sync_lines_reconciles_quantity(self):
+        so, order = self._linked_so_and_order(qty=3)
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake(calls)):
+            changed = order.with_context(shopify_skip_push=True).action_sync_lines_to_shopify()
+        self.assertEqual(changed, 1)
+        sq = next(v for q, v in calls if 'orderEditSetQuantity' in q)
+        self.assertEqual(sq['quantity'], 3)   # Odoo qty 3 vs Shopify 1 → set to 3
+
+    def test_auto_push_cancel(self):
+        self.env['shopify.workflow'].create({
+            'instance_id': self.instance.id, 'tax_handling': 'none', 'auto_push_cancel': True})
+        so, order = self._linked_so_and_order()
+        calls = []
+        with patch.object(type(self.instance), '_graphql_request', side_effect=self._fake(calls)):
+            so._action_cancel()
+        self.assertTrue(any('orderCancel' in q for q, v in calls))

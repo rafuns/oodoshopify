@@ -14,7 +14,7 @@ class _ProductBase(ShopifyTestBase):
             'instance_id': self.instance.id,
             'shopify_product_id': '800',
             'shopify_gid': 'gid://shopify/Product/800',
-            'odoo_product_id': odoo_tmpl.id,
+            'odoo_product_id': odoo_tmpl.product_tmpl_id.id,
         })
         variant = self.env['shopify.product.variant'].create({
             'shopify_product_id': product.id,

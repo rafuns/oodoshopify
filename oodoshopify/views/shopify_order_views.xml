@@ -17,6 +17,9 @@
                     <button name="action_push_tags_and_note" string="Push Tags &amp; Note" type="object"/>
                     <button name="action_assess_risk_ai" string="Assess Risk (AI)" type="object"
                             icon="fa-shield"/>
+                    <button name="action_sync_lines_to_shopify" string="Sync Lines to Shopify"
+                            type="object" invisible="not odoo_sale_order_id"
+                            confirm="This will edit the live Shopify order to match the Odoo sale order lines. Continue?"/>
                     <button name="action_mark_ready_for_pickup" string="Ready for Pickup"
                             type="object" class="btn-primary"
                             invisible="not is_pickup_order or pickup_status != 'pending'"/>

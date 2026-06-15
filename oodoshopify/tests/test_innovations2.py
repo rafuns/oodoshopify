@@ -12,7 +12,7 @@ class _Base(ShopifyTestBase):
         product = self.env['shopify.product'].create({
             'name': 'Repr Widget', 'instance_id': self.instance.id,
             'shopify_product_id': '850', 'shopify_gid': 'gid://shopify/Product/850',
-            'odoo_product_id': tmpl.id,
+            'odoo_product_id': tmpl.product_tmpl_id.id,
         })
         self.env['shopify.product.variant'].create({
             'shopify_product_id': product.id,
